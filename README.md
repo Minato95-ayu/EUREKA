@@ -16,6 +16,16 @@
 
 EUREKA is a revolutionary, open-source platform that transforms scientific education and research through immersive 3D visualization, gesture-based control, and intelligent AI-powered analysis. Built entirely with free and open-source technologies, EUREKA democratizes access to advanced scientific tools for students, researchers, and educators worldwide.
 
+## Current Product Direction
+
+EUREKA is being refocused into a JARVIS-style AI-powered 3D experimental lab with ARIA, the AI Research and Innovation Assistant. The immediate goal is to build a complete interaction loop:
+
+```text
+Search -> visualize -> select -> ask ARIA -> simulate -> explain -> cite
+```
+
+See [docs/JARVIS_VISION.md](docs/JARVIS_VISION.md) for the detailed vision and [PROJECT_STATUS.md](PROJECT_STATUS.md) for the honest current implementation status.
+
 ## ✨ Key Features
 
 ### 🔬 3D Holographic Visualization
