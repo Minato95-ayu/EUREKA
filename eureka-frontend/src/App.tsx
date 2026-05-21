@@ -8,6 +8,41 @@ import './App.css'
 type Tab = 'status' | 'batch' | 'pipeline' | 'research' | 'results'
 type AriaState = 'idle' | 'listening' | 'thinking' | 'speaking'
 type GestureState = 'offline' | 'ready' | 'zoom-in' | 'zoom-out' | 'point' | 'fist' | 'swipe-left' | 'swipe-right'
+type ScaleLevel = 'object' | 'component' | 'subcomponent' | 'material' | 'molecule' | 'atom'
+
+type ObjectGeometry = {
+  type: 'box' | 'cylinder' | 'capsule' | 'fan'
+  size?: [number, number, number]
+  radius?: number
+  depth?: number
+  blades?: number
+  rotation?: [number, number, number]
+}
+
+type ObjectComponent = {
+  id: string
+  name: string
+  parentId: string | null
+  scaleLevel: ScaleLevel
+  function: string
+  material?: string | null
+  riskIfRemoved?: string | null
+  position: [number, number, number]
+  color: string
+  geometry: ObjectGeometry
+  children: string[]
+  microLevels: Array<{ level: ScaleLevel; name: string; description: string; next?: string | null }>
+}
+
+type ExplorableObject = {
+  id: string
+  name: string
+  type: string
+  summary: string
+  defaultView: string
+  model: { kind: 'procedural' | 'gltf'; assetUrl: string | null }
+  components: ObjectComponent[]
+}
 
 type SpeechRecognitionResultItem = {
   transcript: string
@@ -101,7 +136,79 @@ const papers = [
   }
 ]
 
-function LabScene({ zoomLevel, gesture }: { zoomLevel: number; gesture: GestureState }) {
+function ComponentMesh({
+  component,
+  selected,
+  onSelect
+}: {
+  component: ObjectComponent
+  selected: boolean
+  onSelect: (component: ObjectComponent) => void
+}) {
+  const geometry = component.geometry
+  const rotation = geometry.rotation || [0, 0, 0]
+  const material = (
+    <meshStandardMaterial
+      color={component.color}
+      emissive={selected ? '#145b63' : '#071114'}
+      roughness={0.34}
+      metalness={0.34}
+    />
+  )
+  const handlePointerDown = (event: { stopPropagation: () => void }) => {
+    event.stopPropagation()
+    onSelect(component)
+  }
+
+  if (geometry.type === 'fan') {
+    const blades = geometry.blades || 6
+    const radius = geometry.radius || 0.42
+    return (
+      <group position={component.position} onPointerDown={handlePointerDown}>
+        <mesh>
+          <torusGeometry args={[radius, 0.025, 10, 48]} />
+          {material}
+        </mesh>
+        {Array.from({ length: blades }).map((_, index) => (
+          <mesh key={index} rotation={[0, 0, (Math.PI * 2 * index) / blades]} position={[0, 0, 0.02]}>
+            <boxGeometry args={[radius * 0.9, 0.055, 0.035]} />
+            {material}
+          </mesh>
+        ))}
+        <Html position={[0, -0.62, 0]} center>
+          <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+        </Html>
+      </group>
+    )
+  }
+
+  return (
+    <mesh position={component.position} rotation={rotation} onPointerDown={handlePointerDown}>
+      {geometry.type === 'box' && <boxGeometry args={geometry.size || [1, 1, 1]} />}
+      {(geometry.type === 'cylinder' || geometry.type === 'capsule') && (
+        <cylinderGeometry args={[geometry.radius || 0.2, geometry.radius || 0.2, geometry.depth || 0.6, 32]} />
+      )}
+      {material}
+      <Html position={[0, geometry.type === 'box' ? 0.82 : 0.48, 0]} center>
+        <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+      </Html>
+    </mesh>
+  )
+}
+
+function LabScene({
+  zoomLevel,
+  gesture,
+  activeObject,
+  selectedComponent,
+  onSelectComponent
+}: {
+  zoomLevel: number
+  gesture: GestureState
+  activeObject: ExplorableObject | null
+  selectedComponent: ObjectComponent | null
+  onSelectComponent: (component: ObjectComponent) => void
+}) {
   const group = useRef<Group>(null)
 
   useFrame(({ clock, camera }) => {
@@ -120,33 +227,29 @@ function LabScene({ zoomLevel, gesture }: { zoomLevel: number; gesture: GestureS
       <directionalLight position={[4, 6, 4]} intensity={1.4} />
       <pointLight position={[-3, 2, 3]} intensity={1.8} color="#00e5f0" />
       <group ref={group}>
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[1.25, 1.25, 1.25]} />
-          <meshStandardMaterial color="#d68f8d" emissive="#2b090b" roughness={0.32} metalness={0.25} />
-        </mesh>
-        <Sphere args={[0.44, 48, 48]} position={[-1.25, -0.28, 0]}>
-          <MeshDistortMaterial color="#b9dfe6" emissive="#0b4b51" distort={0.09} speed={1.1} roughness={0.2} />
-        </Sphere>
-        <Sphere args={[0.44, 48, 48]} position={[1.25, -0.28, 0]}>
-          <MeshDistortMaterial color="#b9dfe6" emissive="#0b4b51" distort={0.09} speed={1.1} roughness={0.2} />
-        </Sphere>
-        <mesh position={[-0.72, -0.15, 0]} rotation={[0, 0, -0.64]}>
-          <cylinderGeometry args={[0.035, 0.035, 1.2, 16]} />
-          <meshStandardMaterial color="#86d7de" emissive="#0c5960" />
-        </mesh>
-        <mesh position={[0.72, -0.15, 0]} rotation={[0, 0, 0.64]}>
-          <cylinderGeometry args={[0.035, 0.035, 1.2, 16]} />
-          <meshStandardMaterial color="#86d7de" emissive="#0c5960" />
-        </mesh>
-        <Html position={[0, 0.1, 0.66]} center>
-          <span className="atom-label">O</span>
-        </Html>
-        <Html position={[-1.25, -0.28, 0.48]} center>
-          <span className="atom-label atom-label-small">H</span>
-        </Html>
-        <Html position={[1.25, -0.28, 0.48]} center>
-          <span className="atom-label atom-label-small">H</span>
-        </Html>
+        {activeObject ? (
+          activeObject.components.map((component) => (
+            <ComponentMesh
+              component={component}
+              key={component.id}
+              selected={selectedComponent?.id === component.id}
+              onSelect={onSelectComponent}
+            />
+          ))
+        ) : (
+          <>
+            <mesh position={[0, 0, 0]}>
+              <boxGeometry args={[1.25, 1.25, 1.25]} />
+              <meshStandardMaterial color="#d68f8d" emissive="#2b090b" roughness={0.32} metalness={0.25} />
+            </mesh>
+            <Sphere args={[0.44, 48, 48]} position={[-1.25, -0.28, 0]}>
+              <MeshDistortMaterial color="#b9dfe6" emissive="#0b4b51" distort={0.09} speed={1.1} roughness={0.2} />
+            </Sphere>
+            <Sphere args={[0.44, 48, 48]} position={[1.25, -0.28, 0]}>
+              <MeshDistortMaterial color="#b9dfe6" emissive="#0b4b51" distort={0.09} speed={1.1} roughness={0.2} />
+            </Sphere>
+          </>
+        )}
       </group>
       <OrbitControls enableDamping dampingFactor={0.08} />
     </>
@@ -317,7 +420,11 @@ function ResearchScreen({
   onToggleCamera,
   videoRef,
   gesture,
-  zoomLevel
+  zoomLevel,
+  activeObject,
+  selectedComponent,
+  onObjectSearch,
+  onSelectComponent
 }: {
   query: string
   setQuery: (value: string) => void
@@ -330,6 +437,10 @@ function ResearchScreen({
   videoRef: React.RefObject<HTMLVideoElement | null>
   gesture: GestureState
   zoomLevel: number
+  activeObject: ExplorableObject | null
+  selectedComponent: ObjectComponent | null
+  onObjectSearch: () => void
+  onSelectComponent: (component: ObjectComponent) => void
 }) {
   return (
     <main className="research-screen">
@@ -338,23 +449,66 @@ function ResearchScreen({
         <div className="command-row">
           <button className={`icon-button ${ariaState === 'listening' ? 'active' : ''}`} onClick={onToggleVoice} disabled={!voiceSupported} title="Voice command">⌕</button>
           <button className={`icon-button ${cameraEnabled ? 'active' : ''}`} onClick={onToggleCamera} title="Camera gesture control">◉</button>
+          <button className="ghost-button" onClick={onObjectSearch}>Search Object</button>
           <button className="primary-button execute" onClick={onExecute}>Execute ▷</button>
         </div>
       </section>
 
       <section className="core-card">
-        <div className="core-title"><span>▣</span> EUREKA CORE</div>
+        <div className="core-title"><span>▣</span> {activeObject ? activeObject.name : 'EUREKA CORE'}</div>
         <ul className="core-steps">
-          <li>✓ Accessing PubChem database... [OK]</li>
-          <li>✓ Retrieving H2O structural data... [OK]</li>
-          <li>⌛ Running molecular orbital calculations...</li>
+          {activeObject ? (
+            <>
+              <li>Loaded {activeObject.components.length} explorable components.</li>
+              <li>Selected: {selectedComponent ? selectedComponent.name : 'none'}</li>
+              <li>{selectedComponent ? selectedComponent.function : activeObject.summary}</li>
+            </>
+          ) : (
+            <>
+              <li>Accessing demo molecular structure... [OK]</li>
+              <li>Search car engine to load the first invention object.</li>
+              <li>Awaiting object command...</li>
+            </>
+          )}
         </ul>
         <div className="scene-shell">
           <Canvas>
-            <LabScene zoomLevel={zoomLevel} gesture={gesture} />
+            <LabScene
+              zoomLevel={zoomLevel}
+              gesture={gesture}
+              activeObject={activeObject}
+              selectedComponent={selectedComponent}
+              onSelectComponent={onSelectComponent}
+            />
           </Canvas>
         </div>
       </section>
+
+      {activeObject && (
+        <section className="component-card">
+          <div className="section-title">Component Graph <span>{activeObject.defaultView}</span></div>
+          <div className="component-list">
+            {activeObject.components.map((component) => (
+              <button
+                className={selectedComponent?.id === component.id ? 'selected' : ''}
+                key={component.id}
+                onClick={() => onSelectComponent(component)}
+              >
+                <b>{component.name}</b>
+                <span>{component.scaleLevel}</span>
+              </button>
+            ))}
+          </div>
+          {selectedComponent && (
+            <div className="component-detail">
+              <h2>{selectedComponent.name}</h2>
+              <p>{selectedComponent.function}</p>
+              <span>Material: {selectedComponent.material || 'unknown'}</span>
+              <span>Risk: {selectedComponent.riskIfRemoved || 'not defined'}</span>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="control-card">
         <div className="section-title">Input Systems <span>{ariaState.toUpperCase()}</span></div>
@@ -373,9 +527,11 @@ function ResearchScreen({
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('research')
-  const [query, setQuery] = useState('Analyze water molecules.')
+  const [query, setQuery] = useState('car engine')
   const [ariaState, setAriaState] = useState<AriaState>('idle')
   const [ariaReply, setAriaReply] = useState('ARIA online. Voice and gesture systems are ready for calibration.')
+  const [activeObject, setActiveObject] = useState<ExplorableObject | null>(null)
+  const [selectedComponent, setSelectedComponent] = useState<ObjectComponent | null>(null)
   const [cameraEnabled, setCameraEnabled] = useState(false)
   const [gesture, setGesture] = useState<GestureState>('offline')
   const [zoomLevel, setZoomLevel] = useState(1)
@@ -392,6 +548,11 @@ function App() {
 
   const voiceSupported = Boolean(SpeechRecognitionCtor)
 
+  const selectComponent = useCallback((component: ObjectComponent) => {
+    setSelectedComponent(component)
+    setAriaReply(`${component.name} selected. ${component.function}`)
+  }, [])
+
   const speak = useCallback((text: string) => {
     setAriaReply(text)
     if (!('speechSynthesis' in window)) return
@@ -405,6 +566,82 @@ function App() {
     window.speechSynthesis.speak(utterance)
   }, [])
 
+  const searchObject = useCallback(async (rawQuery?: string) => {
+    const searchText = (rawQuery || query).trim() || 'car engine'
+    setAriaState('thinking')
+    setAriaReply(`Searching object library for ${searchText}...`)
+
+    try {
+      const params = new URLSearchParams({ q: searchText })
+      const searchResponse = await fetch(`http://localhost:8000/api/objects/search?${params.toString()}`)
+      const matches = await searchResponse.json()
+      const objectId = matches?.[0]?.id || 'car_engine'
+      const objectResponse = await fetch(`http://localhost:8000/api/objects/${objectId}`)
+      const objectData = await objectResponse.json()
+      setActiveObject(objectData)
+      setSelectedComponent(objectData.components?.[0] || null)
+      setActiveTab('research')
+      speak(`Loaded ${objectData.name}. Select a component or ask ARIA what it does.`)
+    } catch {
+      const fallback: ExplorableObject = {
+        id: 'car_engine',
+        name: 'Car Engine',
+        type: 'mechanical_system',
+        summary: 'Offline demo car engine with clickable core components.',
+        defaultView: 'assembled',
+        model: { kind: 'procedural', assetUrl: null },
+        components: [
+          {
+            id: 'engine_block',
+            name: 'Engine Block',
+            parentId: null,
+            scaleLevel: 'component',
+            function: 'Holds the engine structure, cylinders, coolant passages, and oil channels.',
+            material: 'Cast aluminum or iron',
+            riskIfRemoved: 'The engine cannot exist structurally without it.',
+            position: [0, 0, 0],
+            color: '#6f7f8f',
+            geometry: { type: 'box', size: [2.8, 1.25, 1.2] },
+            children: ['piston', 'cooling_fan'],
+            microLevels: []
+          },
+          {
+            id: 'piston',
+            name: 'Piston',
+            parentId: 'engine_block',
+            scaleLevel: 'subcomponent',
+            function: 'Compresses air-fuel mixture and receives combustion force.',
+            material: 'Aluminum alloy',
+            riskIfRemoved: 'The cylinder loses compression and power.',
+            position: [-0.82, 0.42, 0.05],
+            color: '#d8a45e',
+            geometry: { type: 'cylinder', radius: 0.28, depth: 0.56 },
+            children: [],
+            microLevels: []
+          },
+          {
+            id: 'cooling_fan',
+            name: 'Cooling Fan',
+            parentId: 'engine_block',
+            scaleLevel: 'subcomponent',
+            function: 'Moves air to help remove heat from the cooling system.',
+            material: 'Composite plastic',
+            riskIfRemoved: 'Heat rises quickly during low-speed operation.',
+            position: [1.82, 0.02, 0],
+            color: '#64d2ff',
+            geometry: { type: 'fan', radius: 0.44, blades: 6 },
+            children: [],
+            microLevels: []
+          }
+        ]
+      }
+      setActiveObject(fallback)
+      setSelectedComponent(fallback.components[0])
+      setActiveTab('research')
+      speak('Backend offline. Loaded local car engine demo.')
+    }
+  }, [query, speak])
+
   const executeCommand = useCallback(async (rawCommand?: string) => {
     const command = (rawCommand || query).trim()
     if (!command) return
@@ -415,6 +652,7 @@ function App() {
     if (lower.includes('result')) setActiveTab('results')
     if (lower.includes('status')) setActiveTab('status')
     if (lower.includes('research') || lower.includes('analyze')) setActiveTab('research')
+    if (lower.includes('car') || lower.includes('engine') || lower.includes('search')) void searchObject(command)
     if (lower.includes('zoom in')) setZoomLevel((value) => Math.min(4, value + 0.5))
     if (lower.includes('zoom out')) setZoomLevel((value) => Math.max(0, value - 0.5))
     if (lower.includes('reset')) setZoomLevel(1)
@@ -423,7 +661,10 @@ function App() {
     setAriaReply(`Processing command: ${command}`)
 
     try {
-      const params = new URLSearchParams({ message: command })
+      const context = selectedComponent
+        ? `\n\nSelected object: ${activeObject?.name || 'unknown'}\nSelected component: ${selectedComponent.name}\nFunction: ${selectedComponent.function}\nMaterial: ${selectedComponent.material || 'unknown'}\nRisk if removed: ${selectedComponent.riskIfRemoved || 'unknown'}`
+        : ''
+      const params = new URLSearchParams({ message: `${command}${context}` })
       const response = await fetch(`http://localhost:8000/api/agents/process?${params.toString()}`, { method: 'POST' })
       const data = await response.json()
       const reply = data?.result?.unified_response || data?.result?.message || `Command accepted: ${command}`
@@ -431,7 +672,7 @@ function App() {
     } catch {
       speak(`ARIA local mode: ${command}. I updated the lab view and kept the command in session memory.`)
     }
-  }, [query, speak])
+  }, [activeObject?.name, query, searchObject, selectedComponent, speak])
 
   const toggleVoice = useCallback(() => {
     if (!SpeechRecognitionCtor) return
@@ -582,6 +823,10 @@ function App() {
         videoRef={videoRef}
         gesture={gesture}
         zoomLevel={zoomLevel}
+        activeObject={activeObject}
+        selectedComponent={selectedComponent}
+        onObjectSearch={() => void searchObject()}
+        onSelectComponent={selectComponent}
       />
     ),
     results: <ResultsScreen />
@@ -599,9 +844,9 @@ function App() {
           <div className="section-title">ARIA Agent <span>{ariaState}</span></div>
           <p>{ariaReply}</p>
           <div className="aria-chips">
-            <button onClick={() => void executeCommand('ARIA analyze water molecules')}>Analyze H2O</button>
+            <button onClick={() => void searchObject('car engine')}>Load Engine</button>
+            <button onClick={() => void executeCommand('ARIA explain selected component')}>Explain Part</button>
             <button onClick={() => void executeCommand('zoom in')}>Zoom In</button>
-            <button onClick={() => void executeCommand('show results')}>Results</button>
           </div>
         </aside>
       </div>

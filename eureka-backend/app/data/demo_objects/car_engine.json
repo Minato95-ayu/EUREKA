@@ -1,0 +1,122 @@
+{
+  "id": "car_engine",
+  "name": "Car Engine",
+  "type": "mechanical_system",
+  "summary": "A simplified internal combustion engine with core parts for exploration, ARIA explanation, and what-if simulation.",
+  "defaultView": "assembled",
+  "model": {
+    "kind": "procedural",
+    "assetUrl": null
+  },
+  "components": [
+    {
+      "id": "engine_block",
+      "name": "Engine Block",
+      "parentId": null,
+      "scaleLevel": "component",
+      "function": "Holds cylinders, coolant passages, oil channels, and the structural body of the engine.",
+      "material": "Cast iron or aluminum alloy",
+      "riskIfRemoved": "The engine cannot exist structurally without the block.",
+      "position": [0, 0, 0],
+      "color": "#6f7f8f",
+      "geometry": { "type": "box", "size": [2.8, 1.25, 1.2] },
+      "children": ["piston", "crankshaft", "valve", "spark_plug", "cooling_fan"],
+      "microLevels": [
+        {
+          "level": "material",
+          "name": "Aluminum alloy grain structure",
+          "description": "A microscopic view of alloy grains that affect strength and heat transfer.",
+          "next": "aluminum_atom"
+        }
+      ]
+    },
+    {
+      "id": "piston",
+      "name": "Piston",
+      "parentId": "engine_block",
+      "scaleLevel": "subcomponent",
+      "function": "Compresses the air-fuel mixture and converts combustion pressure into downward motion.",
+      "material": "Aluminum alloy",
+      "riskIfRemoved": "The cylinder loses compression and the engine cannot produce useful power.",
+      "position": [-0.82, 0.42, 0.05],
+      "color": "#d8a45e",
+      "geometry": { "type": "cylinder", "radius": 0.28, "depth": 0.56 },
+      "children": ["piston_ring"],
+      "microLevels": [
+        {
+          "level": "material",
+          "name": "Aluminum alloy",
+          "description": "Light metal alloy chosen for low mass and good heat transfer.",
+          "next": "aluminum_atom"
+        },
+        {
+          "level": "atom",
+          "name": "Aluminum atom",
+          "description": "Atomic-scale placeholder for future material exploration."
+        }
+      ]
+    },
+    {
+      "id": "crankshaft",
+      "name": "Crankshaft",
+      "parentId": "engine_block",
+      "scaleLevel": "subcomponent",
+      "function": "Converts piston up-down motion into rotating motion for the drivetrain.",
+      "material": "Forged steel",
+      "riskIfRemoved": "The engine cannot transmit piston force into rotation.",
+      "position": [0, -0.45, 0],
+      "color": "#c0c7d1",
+      "geometry": { "type": "cylinder", "radius": 0.13, "depth": 2.6, "rotation": [0, 0, 1.5708] },
+      "children": [],
+      "microLevels": [
+        {
+          "level": "material",
+          "name": "Steel crystal structure",
+          "description": "Steel microstructure affects fatigue resistance and torque capacity."
+        }
+      ]
+    },
+    {
+      "id": "valve",
+      "name": "Intake Valve",
+      "parentId": "engine_block",
+      "scaleLevel": "subcomponent",
+      "function": "Lets fresh air-fuel mixture enter the cylinder at the correct timing.",
+      "material": "Heat-resistant steel",
+      "riskIfRemoved": "Airflow timing fails, causing misfire or no combustion.",
+      "position": [0.12, 0.82, 0.12],
+      "color": "#87d9b5",
+      "geometry": { "type": "capsule", "radius": 0.08, "depth": 0.72 },
+      "children": [],
+      "microLevels": []
+    },
+    {
+      "id": "spark_plug",
+      "name": "Spark Plug",
+      "parentId": "engine_block",
+      "scaleLevel": "subcomponent",
+      "function": "Creates an electric spark that ignites the compressed air-fuel mixture.",
+      "material": "Ceramic insulator with metal electrode",
+      "riskIfRemoved": "Fuel may not ignite, so the cylinder stops producing power.",
+      "position": [0.78, 0.82, 0.1],
+      "color": "#f2e8c9",
+      "geometry": { "type": "cylinder", "radius": 0.09, "depth": 0.65 },
+      "children": [],
+      "microLevels": []
+    },
+    {
+      "id": "cooling_fan",
+      "name": "Cooling Fan",
+      "parentId": "engine_block",
+      "scaleLevel": "subcomponent",
+      "function": "Moves air through the radiator area to help remove heat from coolant.",
+      "material": "Composite plastic or aluminum",
+      "riskIfRemoved": "Heat rises quickly during low-speed operation and may damage engine parts.",
+      "position": [1.82, 0.02, 0],
+      "color": "#64d2ff",
+      "geometry": { "type": "fan", "radius": 0.44, "blades": 6 },
+      "children": [],
+      "microLevels": []
+    }
+  ]
+}

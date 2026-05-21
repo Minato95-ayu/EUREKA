@@ -16,6 +16,7 @@ EUREKA is evolving into a JARVIS-style AI-powered 3D experimental lab:
 - Use cloud or Colab compute for heavier AI/model-generation workloads so weak local GPUs can still run the experience.
 
 The detailed product spec lives in [docs/JARVIS_VISION.md](docs/JARVIS_VISION.md).
+The missing-feature implementation plan lives in [docs/MISSING_FEATURES_BUILD_PLAN.md](docs/MISSING_FEATURES_BUILD_PLAN.md).
 
 ## Honest Current State
 
@@ -27,8 +28,8 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 | ARIA / multi-agent backend | Partial | Backend has multi-agent services, but the agent is still routed by simple keyword logic and is not yet a full ARIA experience. |
 | Voice control | Partial | Frontend MVP uses Web Speech API for commands and browser speech synthesis for ARIA replies. |
 | Hand gesture control | Partial | Frontend MVP uses webcam + MediaPipe Hands loader for pinch zoom, fist reset, point, and swipe tab actions. |
-| Search-to-3D pipeline | Not implemented | Needs object search, model source/generation strategy, caching, and component hierarchy. |
-| Recursive zoom | Not implemented | Needs structured object/component graph and frontend navigation model. |
+| Search-to-3D pipeline | Partial | Backend now has curated object search and a car-engine object package; frontend can load a procedural clickable engine scene. |
+| Recursive zoom | Partial | The first object/component graph exists with component metadata and micro-level placeholders, but zoom navigation is not implemented yet. |
 | Physics simulation | Partial | Backend includes a simplified particle physics engine with Coulomb and Van der Waals forces. |
 | Chemistry simulation | Partial | Backend includes RDKit-based molecule properties and simplified reaction estimation. |
 | Research integration | Partial | ArXiv/PubMed-related services exist, but citation-backed ARIA research workflows need product integration. |
@@ -43,6 +44,7 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 - `eureka-frontend/src/App.tsx` renders a full-screen React Three Fiber scene.
 - `three`, `@react-three/fiber`, `@react-three/drei`, `@mediapipe/hands`, and `socket.io-client` are already dependencies.
 - The frontend now includes the first responsive lab shell: status, batch, pipeline, research, and results tabs, plus ARIA voice and camera gesture controls.
+- The frontend can search/load the first curated `car_engine` demo object, render a procedural clickable component scene, and pass selected component context into ARIA requests.
 
 ### Backend
 
@@ -51,6 +53,7 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 - `app/services/physics_engine.py` provides a simplified 3D particle simulation engine.
 - `app/services/chemistry_engine.py` provides RDKit molecule and reaction utilities.
 - `app/services/research_database.py`, `analytics_service.py`, `collaboration_service.py`, and `export_service.py` provide useful service-level foundations.
+- `app/api/objects.py`, `app/services/object_library.py`, and `app/data/demo_objects/car_engine.json` provide the first curated search-to-3D object graph.
 
 ### Infrastructure
 
@@ -74,6 +77,7 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 - [ ] Create complete frontend API/WebSocket service clients.
 - [ ] Add ARIA identity and conversation flow in the backend.
 - [ ] Align README/API docs with actual endpoints.
+- [x] Fix backend `DEBUG=release` config parsing so tests can run in the current environment.
 
 ### Phase 2: Voice and Gesture Controls
 
@@ -85,9 +89,9 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 
 ### Phase 3: Search-to-3D and Recursive Exploration
 
-- [ ] Define an object/component schema for multi-scale exploration.
-- [ ] Implement object search endpoint.
-- [ ] Start with curated/generated procedural models for demo objects such as car engine, rocket, and human heart.
+- [x] Define an object/component schema for multi-scale exploration.
+- [x] Implement object search endpoint.
+- [x] Start with curated/generated procedural model for the first demo object: car engine.
 - [ ] Add lazy-loaded component levels: object, component, sub-component, molecule, atom.
 - [ ] Add model caching and component metadata storage.
 
