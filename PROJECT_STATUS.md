@@ -32,6 +32,7 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 | Physics simulation | Partial | Backend includes a simplified particle physics engine with Coulomb and Van der Waals forces. |
 | Chemistry simulation | Partial | Backend includes RDKit-based molecule properties and simplified reaction estimation. |
 | Research integration | Partial | ArXiv/PubMed-related services exist, but citation-backed ARIA research workflows need product integration. |
+| Automation layer | Partial | `eureka-automation/` now contains an initial TypeScript/Puppeteer/BullMQ scaffold for scraping and batch experiments. |
 | Collaboration and analytics | Partial | Backend services and tests exist, but frontend workflows are not connected. |
 | Deployment | Partial | Docker/Kubernetes/monitoring files exist, but environment variables and runtime assumptions need verification. |
 
@@ -56,6 +57,12 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 - `docker-compose.yml` defines backend, frontend, Postgres, Redis, Ollama, and Nginx.
 - Kubernetes, Helm, Prometheus, alerting, and ELK config files exist.
 - These should be tested and corrected before calling the project production-ready.
+
+### Automation
+
+- `eureka-automation/` defines the new Node.js automation layer.
+- It includes initial scrapers for ArXiv and PubMed, a BullMQ batch processor, and an EUREKA API client.
+- The detailed automation design lives in [docs/AUTOMATION_LAYER.md](docs/AUTOMATION_LAYER.md).
 
 ## New Implementation Roadmap
 
@@ -106,6 +113,18 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 - [ ] Split lightweight local frontend from heavier cloud backend workloads.
 - [ ] Add model-generation worker interface for future image-to-3D or mesh generation services.
 - [ ] Add deployment validation checklist.
+
+### Phase 7: Autonomous Research Automation
+
+- [x] Add `eureka-automation/` TypeScript project scaffold.
+- [x] Add ArXiv and PubMed research collection foundations.
+- [x] Add BullMQ queue processor for batch experiments.
+- [x] Add current EUREKA backend API client.
+- [ ] Add PDF download and extraction pipeline.
+- [ ] Add relevance scoring, citation extraction, and formula extraction.
+- [ ] Add scheduled monitoring for research topics.
+- [ ] Add email/Slack/Discord notifications.
+- [ ] Add report generation and automation dashboard.
 
 ## Immediate Next Build Target
 

@@ -26,6 +26,8 @@ Search -> visualize -> select -> ask ARIA -> simulate -> explain -> cite
 
 See [docs/JARVIS_VISION.md](docs/JARVIS_VISION.md) for the detailed vision and [PROJECT_STATUS.md](PROJECT_STATUS.md) for the honest current implementation status.
 
+EUREKA also now includes an early automation layer in [eureka-automation/](eureka-automation/) for research scraping, batch experiment orchestration, and ARIA-assisted analysis. See [docs/AUTOMATION_LAYER.md](docs/AUTOMATION_LAYER.md).
+
 ## ✨ Key Features
 
 ### 🔬 3D Holographic Visualization
