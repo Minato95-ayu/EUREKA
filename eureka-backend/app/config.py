@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from functools import lru_cache
 
 class Settings(BaseSettings):
@@ -29,6 +30,20 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "https://eureka.io"
     ]
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug_mode(cls, value):
+        """Accept deployment words that sometimes arrive through shared env vars."""
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "on", "debug", "development", "dev"}:
+                return True
+            if normalized in {"0", "false", "no", "off", "release", "production", "prod"}:
+                return False
+        return value
     
     class Config:
         env_file = ".env"
