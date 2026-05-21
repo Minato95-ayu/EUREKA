@@ -1,0 +1,49 @@
+groups:
+  - name: eureka_alerts
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total[5m]))
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx error rate detected"
+          description: "The 5xx error rate is above 5% for the last 5 minutes (current value: {{ $value | humanizePercentage }})."
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+          > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency (p95 > 1s)"
+          description: "The 95th percentile request latency is above 1 second for the last 5 minutes (current value: {{ $value | humanizeDuration }})."
+
+      - alert: PodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total{namespace="eureka"}[5m])
+          > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod crash-looping detected"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is restarting more than once every 10 minutes."
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          pg_stat_activity_count
+          > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool near exhaustion"
+          description: "PostgreSQL active connections ({{ $value }}) exceed 90, approaching the default pool limit."
