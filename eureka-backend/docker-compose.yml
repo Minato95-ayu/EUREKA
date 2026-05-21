@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Ollama (Local LLM)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: eureka-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    command: serve
+    networks:
+      - eureka-network
+
+  # FastAPI Backend
+  backend:
+    build: .
+    container_name: eureka-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - DATABASE_URL=postgresql://eureka:eureka@postgres:5432/eureka
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - ollama
+      - postgres
+      - redis
+    networks:
+      - eureka-network
+    volumes:
+      - .:/app
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: eureka-postgres
+    environment:
+      - POSTGRES_USER=eureka
+      - POSTGRES_PASSWORD=eureka
+      - POSTGRES_DB=eureka
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eureka-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: eureka-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - eureka-network
+
+volumes:
+  ollama_data:
+  postgres_data:
+  redis_data:
+
+networks:
+  eureka-network:
+    driver: bridge

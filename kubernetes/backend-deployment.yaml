@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka-backend
+  namespace: eureka
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: eureka-backend
+  template:
+    metadata:
+      labels:
+        app: eureka-backend
+    spec:
+      containers:
+      - name: backend
+        image: eureka/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: eureka-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: eureka-config
+              key: redis-url
+        - name: OLLAMA_URL
+          valueFrom:
+            configMapKeyRef:
+              name: eureka-config
+              key: ollama-url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
