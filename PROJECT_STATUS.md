@@ -1,92 +1,120 @@
-# EUREKA Project Implementation Status
+# EUREKA Project Status
 
-This file tracks the development progress of the EUREKA AI-Powered Virtual Research Laboratory project across its different implementation phases.
+This file tracks the real implementation status of EUREKA after the new ARIA / JARVIS-style product direction.
 
----
+Last updated: May 21, 2026
 
-## 📊 Overview
+## Current Direction
 
-- **Current Phase:** ✅ All 6 Phases Complete — Production Ready
-- **Phase 6 Progress:** ✅ Completed
-- **Last Updated:** May 21, 2026
+EUREKA is evolving into a JARVIS-style AI-powered 3D experimental lab:
 
----
+- Search for an object and visualize it in 3D.
+- Explore it recursively from object level to components, molecules, and atoms.
+- Control the lab with voice, chat, and hand gestures.
+- Ask ARIA, the AI Research and Innovation Assistant, to explain, simulate, predict, and research.
+- Run physics, chemistry, and engineering-style what-if simulations.
+- Use cloud or Colab compute for heavier AI/model-generation workloads so weak local GPUs can still run the experience.
 
-## 🛠️ Phases Timeline & Status
+The detailed product spec lives in [docs/JARVIS_VISION.md](docs/JARVIS_VISION.md).
 
-### Phase 1: Interactive 3D Canvas
-- **Status:** ✅ Completed
-- **Key Features:**
-  - Setup React, TypeScript, and Vite environment.
-  - Initialized 3D rendering canvas using React Three Fiber and Three.js.
-  - Implemented standard orbital controls and an interactive distorting 3D Sphere ("Atom") animation.
-  - Configured initial hand-tracking libraries (`@mediapipe/hands`).
+## Honest Current State
 
-### Phase 2: AI Orchestrator & Single Agent
-- **Status:** ✅ Completed
-- **Key Features:**
-  - Setup Python/FastAPI backend architecture.
-  - Created service connections for Ollama (local LLM inference engine) with health checks.
-  - Implemented initial WebSocket connection manager for real-time experiment sync.
-  - Added baseline scientific helper modules (RDKit chemistry weight calculator, simple physics simulation placeholder).
-  - Setup Docker configurations (`Dockerfile`, `docker-compose.yml`) for PostgreSQL and Redis.
+The repository has a useful foundation, but it is not yet the full JARVIS-style lab.
 
-### Phase 3: Multi-Agent System
-- **Status:** ✅ Completed
-- **Key Features:**
-  - [x] Implement Abstract Base Agent Class.
-  - [x] Implement Explainer Agent (educational analysis).
-  - [x] Implement Analyzer Agent (calculations & properties).
-  - [x] Implement Thinker Agent (predictive physics/chemistry models).
-  - [x] Implement Research Integrator Agent (fetching external literature via ArXiv with XML parsing).
-  - [x] Implement Helper Agent (Master Coordinator that routes and synthesizes queries).
-  - [x] Refactor `AgentManager` with MD5 hashing cache logic.
-  - [x] Update FastAPI routes for individual/multi-agent processing & real-time WebSockets.
-  - [x] Setup DB schema migrations/tables for Conversations, Research Papers, and Agent Metrics.
-  - [x] Create automated testing suite (`pytest tests/test_agents.py`).
+| Area | Status | Notes |
+| --- | --- | --- |
+| React + Three.js viewport | Partial | The frontend currently shows a Phase 1 3D atom/sphere demo. |
+| ARIA / multi-agent backend | Partial | Backend has multi-agent services, but the agent is still routed by simple keyword logic and is not yet a full ARIA experience. |
+| Voice control | Not implemented | Web Speech API integration still needs to be built. |
+| Hand gesture control | Not implemented | MediaPipe dependency exists, but no production gesture workflow is wired into the UI. |
+| Search-to-3D pipeline | Not implemented | Needs object search, model source/generation strategy, caching, and component hierarchy. |
+| Recursive zoom | Not implemented | Needs structured object/component graph and frontend navigation model. |
+| Physics simulation | Partial | Backend includes a simplified particle physics engine with Coulomb and Van der Waals forces. |
+| Chemistry simulation | Partial | Backend includes RDKit-based molecule properties and simplified reaction estimation. |
+| Research integration | Partial | ArXiv/PubMed-related services exist, but citation-backed ARIA research workflows need product integration. |
+| Collaboration and analytics | Partial | Backend services and tests exist, but frontend workflows are not connected. |
+| Deployment | Partial | Docker/Kubernetes/monitoring files exist, but environment variables and runtime assumptions need verification. |
 
-### Phase 4: Simulation Engine & Physics Integration
-- **Status:** ✅ Completed
-- **Key Features:**
-  - [x] Built a 3D Physics Engine with Verlet integration, Coulomb forces, and Van der Waals forces.
-  - [x] Integrated a Chemistry Engine using RDKit for SMILES validation, 3D structure embedding, and molecular descriptors calculation.
-  - [x] Created a Simulation Manager to configure molecular structures, reactions, and run simulation steps.
-  - [x] Added database storage migrations and logging for simulations, particles, reactions, and trajectory results.
-  - [x] Set up FastAPI endpoints and real-time WebSockets for streaming simulation frames.
-  - [x] Created an automated test suite verifying math, forces, properties, and manager flow.
+## Existing Foundation
 
-### Phase 5: Advanced Research Features & Collaboration
-- **Status:** ✅ Completed
-- **Key Features:**
-  - [x] Implemented Research Database Service with ArXiv XML parsing, PubMed API integration, semantic search, and keyword-based related paper discovery.
-  - [x] Built Collaboration Service with role-based permissions (owner/editor/viewer), comments, annotations, and experiment versioning.
-  - [x] Created real-time Collaboration WebSocket Manager for broadcasting changes and comments to active collaborators.
-  - [x] Implemented Advanced Analytics Service with NumPy/SciPy: experiment comparison, t-test/ANOVA statistical significance, z-score anomaly detection, and linear regression trend analysis.
-  - [x] Built Export Service supporting JSON, CSV (with trajectory data), and PDF (via ReportLab) generation, plus DOI assignment.
-  - [x] Created FastAPI router with Pydantic-validated endpoints for collaborations, analytics, and exports.
-  - [x] Added database migration tables: `collaborations`, `collaboration_members`, `comments`, `experiment_versions`.
-  - [x] Created automated test suite (`pytest tests/test_phase5.py`) — 8 tests passing.
+### Frontend
 
-### Phase 6: Deployment, Scaling & Production
-- **Status:** ✅ Completed
-- **Key Features:**
-  - [x] Docker containerization: Backend Dockerfile (Python 3.11-slim, non-root user, health check), Frontend Dockerfile (multi-stage Node 22 build).
-  - [x] docker-compose.yml with 6 services (backend, frontend, postgres, redis, ollama, nginx) on bridge network with health checks.
-  - [x] Nginx reverse proxy with TLS 1.2/1.3, security headers (HSTS, nosniff, XSS-Protection), rate limiting, WebSocket support.
-  - [x] PostgreSQL init.sql with all 11 tables from Phase 3-5, pgvector extension support.
-  - [x] Kubernetes manifests: namespace, backend deployment (3 replicas), frontend deployment (2 replicas), ClusterIP services, HPA (3-10 pods, 70% CPU / 80% memory), Ingress with cert-manager TLS.
-  - [x] Helm chart values.yaml for parameterized deployment.
-  - [x] GitHub Actions CI/CD pipeline: test → build (Docker multi-stage with cache) → deploy (Helm + kubectl).
-  - [x] Prometheus monitoring config with scrape targets for backend, frontend, postgres, redis.
-  - [x] Alert rules: HighErrorRate, HighLatency, PodCrashLooping, DatabaseConnectionPoolExhausted.
-  - [x] ELK stack docker-compose (Elasticsearch, Kibana, Logstash) for centralized logging.
-  - [x] Security module: JWT authentication (PyJWT), rate limiting (slowapi), CORS config, TrustedHostMiddleware.
-  - [x] Health check API: `/health` (basic), `/health/detailed` (DB + Redis + Ollama), `/health/ready` (K8s readiness probe).
-  - [x] Database connection pooling optimization (pool_size=20, max_overflow=40, pool_pre_ping, pool_recycle).
+- `eureka-frontend/src/App.tsx` renders a full-screen React Three Fiber scene.
+- `three`, `@react-three/fiber`, `@react-three/drei`, `@mediapipe/hands`, and `socket.io-client` are already dependencies.
+- The frontend needs to be rebuilt into the actual lab interface: viewport, ARIA panel, search, voice controls, gesture status, component tree, and simulation panels.
 
----
+### Backend
 
-## ⚙️ How to Review Progress
+- `eureka-backend/main.py` defines a FastAPI app with agent, simulation, collaboration, health, and WebSocket routes.
+- `app/agents/` contains Explainer, Analyzer, Thinker, Research, and Helper agent classes.
+- `app/services/physics_engine.py` provides a simplified 3D particle simulation engine.
+- `app/services/chemistry_engine.py` provides RDKit molecule and reaction utilities.
+- `app/services/research_database.py`, `analytics_service.py`, `collaboration_service.py`, and `export_service.py` provide useful service-level foundations.
 
-You can check the implementation of agents in [eureka-backend/app/agents/](file:///D:/Users/ayush/.gemini/antigravity/scratch/eureka/eureka-backend/app/agents/), simulation engine services in [eureka-backend/app/services/](file:///D:/Users/ayush/.gemini/antigravity/scratch/eureka/eureka-backend/app/services/), collaboration API in [eureka-backend/app/api/collaboration.py](file:///D:/Users/ayush/.gemini/antigravity/scratch/eureka/eureka-backend/app/api/collaboration.py), health checks in [eureka-backend/app/api/health.py](file:///D:/Users/ayush/.gemini/antigravity/scratch/eureka/eureka-backend/app/api/health.py), infrastructure in [docker-compose.yml](file:///D:/Users/ayush/.gemini/antigravity/scratch/eureka/docker-compose.yml), Kubernetes manifests in [kubernetes/](file:///D:/Users/ayush/.gemini/antigravity/scratch/eureka/kubernetes/), and test coverage in [eureka-backend/tests/](file:///D:/Users/ayush/.gemini/antigravity/scratch/eureka/eureka-backend/tests/).
+### Infrastructure
 
+- `docker-compose.yml` defines backend, frontend, Postgres, Redis, Ollama, and Nginx.
+- Kubernetes, Helm, Prometheus, alerting, and ELK config files exist.
+- These should be tested and corrected before calling the project production-ready.
+
+## New Implementation Roadmap
+
+### Phase 1: Product Shell and ARIA UI
+
+- [ ] Replace the current Phase 1 demo with a real lab dashboard.
+- [ ] Add a 3D viewport layout with search, ARIA chat, component tree, simulation readouts, and research panel.
+- [ ] Create frontend API/WebSocket service clients.
+- [ ] Add ARIA identity and conversation flow in the backend.
+- [ ] Align README/API docs with actual endpoints.
+
+### Phase 2: Voice and Gesture Controls
+
+- [ ] Add Web Speech API voice input and browser speech output.
+- [ ] Support English and Hindi command parsing.
+- [ ] Add MediaPipe hand tracking in the frontend.
+- [ ] Map gestures to zoom, rotate, select, isolate, reset, add/remove actions.
+- [ ] Add visible feedback for listening, thinking, and gesture recognition states.
+
+### Phase 3: Search-to-3D and Recursive Exploration
+
+- [ ] Define an object/component schema for multi-scale exploration.
+- [ ] Implement object search endpoint.
+- [ ] Start with curated/generated procedural models for demo objects such as car engine, rocket, and human heart.
+- [ ] Add lazy-loaded component levels: object, component, sub-component, molecule, atom.
+- [ ] Add model caching and component metadata storage.
+
+### Phase 4: Simulation and What-if Engine
+
+- [ ] Connect frontend component manipulation to backend simulation endpoints.
+- [ ] Add undo/redo experiment history.
+- [ ] Add what-if request flow: remove part, change material, change size, change temperature, change pressure.
+- [ ] Return simulation result summaries, graph data, and ARIA explanations.
+- [ ] Add validation links to relevant research where possible.
+
+### Phase 5: Research-Grounded ARIA
+
+- [ ] Build RAG-style context assembly for ARIA.
+- [ ] Integrate reliable sources such as ArXiv and PubMed first.
+- [ ] Add citation display in the frontend.
+- [ ] Add paper summaries and related concept graph.
+- [ ] Avoid unsupported scraping flows where terms of service or reliability are unclear.
+
+### Phase 6: Cloud / Colab Runtime
+
+- [ ] Add Colab setup notebook or script.
+- [ ] Add ngrok/localtunnel configuration guidance.
+- [ ] Split lightweight local frontend from heavier cloud backend workloads.
+- [ ] Add model-generation worker interface for future image-to-3D or mesh generation services.
+- [ ] Add deployment validation checklist.
+
+## Immediate Next Build Target
+
+The next practical milestone should be a working MVP:
+
+1. User searches for a demo object such as "car engine".
+2. Frontend loads a structured 3D scene with clickable components.
+3. User can ask ARIA questions by chat.
+4. ARIA can explain selected components using backend agent services.
+5. User can run a simple what-if simulation and see a result panel.
+
+This gives the project a real JARVIS-like loop before attempting heavyweight automatic 3D generation.
