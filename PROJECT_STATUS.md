@@ -23,10 +23,10 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| React + Three.js viewport | Partial | The frontend currently shows a Phase 1 3D atom/sphere demo. |
+| React + Three.js viewport | Partial | The frontend now has a responsive cyber-lab dashboard with a 3D molecule scene. |
 | ARIA / multi-agent backend | Partial | Backend has multi-agent services, but the agent is still routed by simple keyword logic and is not yet a full ARIA experience. |
-| Voice control | Not implemented | Web Speech API integration still needs to be built. |
-| Hand gesture control | Not implemented | MediaPipe dependency exists, but no production gesture workflow is wired into the UI. |
+| Voice control | Partial | Frontend MVP uses Web Speech API for commands and browser speech synthesis for ARIA replies. |
+| Hand gesture control | Partial | Frontend MVP uses webcam + MediaPipe Hands loader for pinch zoom, fist reset, point, and swipe tab actions. |
 | Search-to-3D pipeline | Not implemented | Needs object search, model source/generation strategy, caching, and component hierarchy. |
 | Recursive zoom | Not implemented | Needs structured object/component graph and frontend navigation model. |
 | Physics simulation | Partial | Backend includes a simplified particle physics engine with Coulomb and Van der Waals forces. |
@@ -42,7 +42,7 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 
 - `eureka-frontend/src/App.tsx` renders a full-screen React Three Fiber scene.
 - `three`, `@react-three/fiber`, `@react-three/drei`, `@mediapipe/hands`, and `socket.io-client` are already dependencies.
-- The frontend needs to be rebuilt into the actual lab interface: viewport, ARIA panel, search, voice controls, gesture status, component tree, and simulation panels.
+- The frontend now includes the first responsive lab shell: status, batch, pipeline, research, and results tabs, plus ARIA voice and camera gesture controls.
 
 ### Backend
 
@@ -69,18 +69,19 @@ The repository has a useful foundation, but it is not yet the full JARVIS-style 
 ### Phase 1: Product Shell and ARIA UI
 
 - [ ] Replace the current Phase 1 demo with a real lab dashboard.
-- [ ] Add a 3D viewport layout with search, ARIA chat, component tree, simulation readouts, and research panel.
-- [ ] Create frontend API/WebSocket service clients.
+- [x] Add a responsive cyber-lab dashboard shell.
+- [x] Add a 3D viewport layout with search, ARIA panel, simulation readouts, and research/result panels.
+- [ ] Create complete frontend API/WebSocket service clients.
 - [ ] Add ARIA identity and conversation flow in the backend.
 - [ ] Align README/API docs with actual endpoints.
 
 ### Phase 2: Voice and Gesture Controls
 
-- [ ] Add Web Speech API voice input and browser speech output.
-- [ ] Support English and Hindi command parsing.
-- [ ] Add MediaPipe hand tracking in the frontend.
-- [ ] Map gestures to zoom, rotate, select, isolate, reset, add/remove actions.
-- [ ] Add visible feedback for listening, thinking, and gesture recognition states.
+- [x] Add Web Speech API voice input and browser speech output.
+- [x] Support initial English/Hindi-aware speech output and command text flow.
+- [x] Add MediaPipe hand tracking in the frontend.
+- [x] Map initial gestures to zoom, reset, point, and tab switching.
+- [x] Add visible feedback for listening, thinking, and gesture recognition states.
 
 ### Phase 3: Search-to-3D and Recursive Exploration
 
