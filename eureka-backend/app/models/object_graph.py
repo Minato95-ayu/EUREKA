@@ -18,6 +18,12 @@ class MicroLevel(BaseModel):
     next: str | None = None
 
 
+class SimulationProperties(BaseModel):
+    mass: float = Field(default=1.0)
+    heat_generation: float = Field(default=0.0, alias="heatGeneration")
+    energy_consumption: float = Field(default=0.0, alias="energyConsumption")
+
+
 class ObjectComponent(BaseModel):
     id: str
     name: str
@@ -31,6 +37,7 @@ class ObjectComponent(BaseModel):
     geometry: dict[str, Any] = Field(default_factory=dict)
     children: list[str] = Field(default_factory=list)
     micro_levels: list[MicroLevel] = Field(default_factory=list, alias="microLevels")
+    simulation_properties: SimulationProperties | None = Field(default=None, alias="simulationProperties")
 
 
 class ExplorableObject(BaseModel):

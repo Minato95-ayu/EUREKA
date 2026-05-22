@@ -28,3 +28,27 @@ async def get_component(object_id: str, component_id: str):
         raise HTTPException(status_code=404, detail="Component not found")
     return component
 
+
+@router.post("/generate", response_model=ExplorableObject)
+async def generate_object(q: str = Query(..., description="Object name to generate")):
+    from main import ollama_service
+    from app.agents.object_architect_agent import ObjectArchitectAgent
+    
+    if not ollama_service:
+        # For testing fallback or direct CLI invocation where FastAPI startup hasn't run
+        from app.services.ollama_service import OllamaService
+        from app.config import get_settings
+        settings = get_settings()
+        ollama_service = OllamaService(
+            host=settings.OLLAMA_HOST,
+            model=settings.OLLAMA_MODEL,
+            timeout=settings.OLLAMA_TIMEOUT
+        )
+        
+    try:
+        agent = ObjectArchitectAgent(ollama_service)
+        obj = await agent.generate_object(q)
+        return obj
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

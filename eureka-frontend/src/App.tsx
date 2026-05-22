@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Sphere, MeshDistortMaterial, Html } from '@react-three/drei'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { OrbitControls, Sphere, MeshDistortMaterial, Html, Edges, Environment, ContactShadows } from '@react-three/drei'
 import type { Hands as MediaPipeHands, Results } from '@mediapipe/hands'
 import type { Group } from 'three'
 import './App.css'
@@ -139,59 +139,146 @@ const papers = [
 function ComponentMesh({
   component,
   selected,
-  onSelect
+  onSelect,
+  explodeFactor,
+  shellMode,
+  showLabels
 }: {
   component: ObjectComponent
   selected: boolean
   onSelect: (component: ObjectComponent) => void
+  explodeFactor: number
+  shellMode: 'solid' | 'transparent' | 'hidden'
+  showLabels: boolean
 }) {
   const geometry = component.geometry
   const rotation = geometry.rotation || [0, 0, 0]
+
+  const isCover = useMemo(() => {
+    return /block|head|pan|chassis|base|cover|housing|shell/i.test(component.name) || component.id === 'engine_block';
+  }, [component.name, component.id])
+
+  const defaultPos = component.position
+  const displacedPos = useMemo(() => {
+    let pos = [...defaultPos] as [number, number, number]
+    if (component.parentId !== null) {
+      const dirX = defaultPos[0]
+      const dirY = defaultPos[1]
+      const dirZ = defaultPos[2]
+      const length = Math.hypot(dirX, dirY, dirZ) || 1.0
+      pos = [
+        defaultPos[0] + (dirX / length) * explodeFactor * 1.2,
+        defaultPos[1] + (dirY / length) * explodeFactor * 1.2,
+        defaultPos[2] + (dirZ / length) * explodeFactor * 1.2,
+      ]
+    }
+    return pos
+  }, [defaultPos, component.parentId, explodeFactor])
+
+  const materialProps = useMemo(() => {
+    const matName = (component.material || '').toLowerCase()
+    let roughness = 0.4
+    let metalness = 0.3
+    let transparent = false
+    let opacity = 1.0
+
+    if (shellMode === 'transparent' && isCover) {
+      roughness = 0.05
+      metalness = 0.95
+      transparent = true
+      opacity = 0.15
+    } else {
+      if (matName.includes('iron')) {
+        roughness = 0.6
+        metalness = 0.8
+      } else if (matName.includes('steel') || matName.includes('chrome') || matName.includes('metal')) {
+        roughness = 0.15
+        metalness = 0.95
+      } else if (matName.includes('aluminum') || matName.includes('alloy')) {
+        roughness = 0.3
+        metalness = 0.85
+      } else if (matName.includes('copper') || matName.includes('brass') || matName.includes('bronze')) {
+        roughness = 0.2
+        metalness = 0.9
+      } else if (matName.includes('carbon') || matName.includes('fiber')) {
+        roughness = 0.45
+        metalness = 0.1
+      } else if (matName.includes('glass') || matName.includes('lens') || matName.includes('optical')) {
+        roughness = 0.05
+        metalness = 0.9
+        transparent = true
+        opacity = 0.35
+      } else if (matName.includes('polymer') || matName.includes('plastic') || matName.includes('composite')) {
+        roughness = 0.5
+        metalness = 0.1
+      }
+    }
+
+    return { roughness, metalness, transparent, opacity }
+  }, [component.material, shellMode, isCover])
+
+  if (shellMode === 'hidden' && isCover) {
+    return null
+  }
+
   const material = (
     <meshStandardMaterial
       color={component.color}
       emissive={selected ? '#145b63' : '#071114'}
-      roughness={0.34}
-      metalness={0.34}
+      roughness={materialProps.roughness}
+      metalness={materialProps.metalness}
+      transparent={materialProps.transparent}
+      opacity={materialProps.opacity}
     />
   )
+
   const handlePointerDown = (event: { stopPropagation: () => void }) => {
     event.stopPropagation()
     onSelect(component)
   }
 
+  const edgeColor = selected ? '#00ffff' : '#2b6cb0'
+  const edgeThickness = selected ? 2 : 1
+
   if (geometry.type === 'fan') {
     const blades = geometry.blades || 6
     const radius = geometry.radius || 0.42
     return (
-      <group position={component.position} onPointerDown={handlePointerDown}>
-        <mesh>
+      <group position={displacedPos} rotation={rotation} onPointerDown={handlePointerDown}>
+        <mesh castShadow receiveShadow>
           <torusGeometry args={[radius, 0.025, 10, 48]} />
           {material}
+          <Edges color={edgeColor} thickness={edgeThickness} />
         </mesh>
         {Array.from({ length: blades }).map((_, index) => (
-          <mesh key={index} rotation={[0, 0, (Math.PI * 2 * index) / blades]} position={[0, 0, 0.02]}>
+          <mesh key={index} rotation={[0, 0, (Math.PI * 2 * index) / blades]} position={[0, 0, 0.02]} castShadow receiveShadow>
             <boxGeometry args={[radius * 0.9, 0.055, 0.035]} />
             {material}
+            <Edges color={edgeColor} thickness={edgeThickness} />
           </mesh>
         ))}
-        <Html position={[0, -0.62, 0]} center>
-          <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
-        </Html>
+        {showLabels && (
+          <Html position={[0, -0.62, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
       </group>
     )
   }
 
   return (
-    <mesh position={component.position} rotation={rotation} onPointerDown={handlePointerDown}>
+    <mesh position={displacedPos} rotation={rotation} onPointerDown={handlePointerDown} castShadow receiveShadow>
       {geometry.type === 'box' && <boxGeometry args={geometry.size || [1, 1, 1]} />}
       {(geometry.type === 'cylinder' || geometry.type === 'capsule') && (
         <cylinderGeometry args={[geometry.radius || 0.2, geometry.radius || 0.2, geometry.depth || 0.6, 32]} />
       )}
       {material}
-      <Html position={[0, geometry.type === 'box' ? 0.82 : 0.48, 0]} center>
-        <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
-      </Html>
+      <Edges color={edgeColor} thickness={edgeThickness} />
+      {showLabels && (
+        <Html position={[0, geometry.type === 'box' ? (geometry.size?.[1] ? geometry.size[1]/2 + 0.32 : 0.82) : (geometry.depth ? geometry.depth/2 + 0.18 : 0.48), 0]} center>
+          <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+        </Html>
+      )}
     </mesh>
   )
 }
@@ -201,20 +288,29 @@ function LabScene({
   gesture,
   activeObject,
   selectedComponent,
-  onSelectComponent
+  onSelectComponent,
+  explodeFactor,
+  shellMode,
+  showLabels
 }: {
   zoomLevel: number
   gesture: GestureState
   activeObject: ExplorableObject | null
   selectedComponent: ObjectComponent | null
   onSelectComponent: (component: ObjectComponent) => void
+  explodeFactor: number
+  shellMode: 'solid' | 'transparent' | 'hidden'
+  showLabels: boolean
 }) {
   const group = useRef<Group>(null)
 
   useFrame(({ clock, camera }) => {
     const t = clock.getElapsedTime()
-    camera.position.z = 6 - zoomLevel * 0.75
-    camera.position.y = 1.4 - zoomLevel * 0.12
+    // Logarithmic camera distance to support 100x zoom cleanly without sudden clipping
+    const zoomLog = Math.log10(zoomLevel) // ranges from 0 (at 1x) to 2 (at 100x)
+    camera.position.z = Math.max(0.08, 6 - zoomLog * 2.75)
+    camera.position.y = Math.max(0.02, 1.4 - zoomLog * 0.65)
+    
     if (group.current) {
       group.current.rotation.y = t * 0.22 + (gesture === 'swipe-left' ? -0.35 : gesture === 'swipe-right' ? 0.35 : 0)
       group.current.rotation.x = Math.sin(t * 0.4) * 0.08
@@ -223,9 +319,10 @@ function LabScene({
 
   return (
     <>
-      <ambientLight intensity={0.65} />
-      <directionalLight position={[4, 6, 4]} intensity={1.4} />
-      <pointLight position={[-3, 2, 3]} intensity={1.8} color="#00e5f0" />
+      <ambientLight intensity={0.25} />
+      <directionalLight position={[5, 8, 5]} intensity={1.5} castShadow />
+      <pointLight position={[-4, 3, 4]} intensity={1.5} color="#00e5f0" />
+      <spotLight position={[0, 10, 0]} intensity={1.2} angle={0.6} penumbra={0.8} />
       <group ref={group}>
         {activeObject ? (
           activeObject.components.map((component) => (
@@ -234,24 +331,30 @@ function LabScene({
               key={component.id}
               selected={selectedComponent?.id === component.id}
               onSelect={onSelectComponent}
+              explodeFactor={explodeFactor}
+              shellMode={shellMode}
+              showLabels={showLabels}
             />
           ))
         ) : (
           <>
             <mesh position={[0, 0, 0]}>
               <boxGeometry args={[1.25, 1.25, 1.25]} />
-              <meshStandardMaterial color="#d68f8d" emissive="#2b090b" roughness={0.32} metalness={0.25} />
+              <meshStandardMaterial color="#556270" roughness={0.2} metalness={0.8} />
             </mesh>
             <Sphere args={[0.44, 48, 48]} position={[-1.25, -0.28, 0]}>
-              <MeshDistortMaterial color="#b9dfe6" emissive="#0b4b51" distort={0.09} speed={1.1} roughness={0.2} />
+              <MeshDistortMaterial color="#dfe6e9" distort={0.09} speed={1.1} roughness={0.1} metalness={0.9} />
             </Sphere>
             <Sphere args={[0.44, 48, 48]} position={[1.25, -0.28, 0]}>
-              <MeshDistortMaterial color="#b9dfe6" emissive="#0b4b51" distort={0.09} speed={1.1} roughness={0.2} />
+              <MeshDistortMaterial color="#2f3640" distort={0.09} speed={1.1} roughness={0.3} metalness={0.8} />
             </Sphere>
           </>
         )}
       </group>
-      <OrbitControls enableDamping dampingFactor={0.08} />
+      <Environment preset="studio" />
+      <ContactShadows position={[0, -1.2, 0]} opacity={0.75} scale={10} blur={2.5} far={2} />
+      <gridHelper args={[20, 20, '#00e5f0', '#2d3748']} position={[0, -1.2, 0]} />
+      <OrbitControls enableDamping dampingFactor={0.08} minDistance={0.05} maxDistance={30.0} />
     </>
   )
 }
@@ -421,10 +524,17 @@ function ResearchScreen({
   videoRef,
   gesture,
   zoomLevel,
+  setZoomLevel,
   activeObject,
   selectedComponent,
   onObjectSearch,
-  onSelectComponent
+  onSelectComponent,
+  explodeFactor,
+  setExplodeFactor,
+  shellMode,
+  setShellMode,
+  showLabels,
+  setShowLabels
 }: {
   query: string
   setQuery: (value: string) => void
@@ -437,10 +547,17 @@ function ResearchScreen({
   videoRef: React.RefObject<HTMLVideoElement | null>
   gesture: GestureState
   zoomLevel: number
+  setZoomLevel: (value: number | ((prev: number) => number)) => void
   activeObject: ExplorableObject | null
   selectedComponent: ObjectComponent | null
   onObjectSearch: () => void
   onSelectComponent: (component: ObjectComponent) => void
+  explodeFactor: number
+  setExplodeFactor: (value: number) => void
+  shellMode: 'solid' | 'transparent' | 'hidden'
+  setShellMode: (value: 'solid' | 'transparent' | 'hidden') => void
+  showLabels: boolean
+  setShowLabels: (value: boolean) => void
 }) {
   return (
     <main className="research-screen">
@@ -471,7 +588,7 @@ function ResearchScreen({
             </>
           )}
         </ul>
-        <div className="scene-shell">
+        <div className="scene-shell" style={{ position: 'relative' }}>
           <Canvas>
             <LabScene
               zoomLevel={zoomLevel}
@@ -479,8 +596,76 @@ function ResearchScreen({
               activeObject={activeObject}
               selectedComponent={selectedComponent}
               onSelectComponent={onSelectComponent}
+              explodeFactor={explodeFactor}
+              shellMode={shellMode}
+              showLabels={showLabels}
             />
           </Canvas>
+          <div className="viewport-controls-overlay">
+            <div className="control-group">
+              <label>Dismantle (Exploded View)</label>
+              <div className="slider-wrapper">
+                <input
+                  type="range"
+                  min="0"
+                  max="1.5"
+                  step="0.05"
+                  value={explodeFactor}
+                  onChange={(e) => setExplodeFactor(parseFloat(e.target.value))}
+                />
+                <span className="control-val">{(explodeFactor * 66.6).toFixed(0)}%</span>
+              </div>
+            </div>
+            
+            <div className="control-group">
+              <label>Outer Covers Mode</label>
+              <div className="btn-toggle-group">
+                <button
+                  className={shellMode === 'solid' ? 'active' : ''}
+                  onClick={() => setShellMode('solid')}
+                >
+                  Solid
+                </button>
+                <button
+                  className={shellMode === 'transparent' ? 'active' : ''}
+                  onClick={() => setShellMode('transparent')}
+                >
+                  Glass
+                </button>
+                <button
+                  className={shellMode === 'hidden' ? 'active' : ''}
+                  onClick={() => setShellMode('hidden')}
+                >
+                  Hidden
+                </button>
+              </div>
+            </div>
+
+            <div className="control-group">
+              <label>Deep Zoom (up to 100x)</label>
+              <div className="slider-wrapper">
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  step="1"
+                  value={zoomLevel}
+                  onChange={(e) => setZoomLevel(parseInt(e.target.value))}
+                />
+                <span className="control-val">{zoomLevel}x</span>
+              </div>
+            </div>
+
+            <div className="control-group inline">
+              <label>Component Labels</label>
+              <button
+                className={`toggle-switch ${showLabels ? 'active' : ''}`}
+                onClick={() => setShowLabels(!showLabels)}
+              >
+                {showLabels ? 'ON' : 'OFF'}
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -516,7 +701,7 @@ function ResearchScreen({
           <div><small>Voice Agent</small><b>{voiceSupported ? ariaState : 'unsupported'}</b></div>
           <div><small>Camera</small><b>{cameraEnabled ? 'tracking' : 'offline'}</b></div>
           <div><small>Gesture</small><b>{gesture}</b></div>
-          <div><small>Zoom Level</small><b>{zoomLevel.toFixed(1)}x</b></div>
+          <div><small>Zoom Level</small><b>{zoomLevel.toFixed(0)}x</b></div>
         </div>
         <video ref={videoRef} className={cameraEnabled ? 'camera-preview active' : 'camera-preview'} muted playsInline />
         <p className="hint">Pinch to zoom, point to select, fist to reset, swipe to switch tabs. Voice supports English and Hindi commands.</p>
@@ -535,6 +720,9 @@ function App() {
   const [cameraEnabled, setCameraEnabled] = useState(false)
   const [gesture, setGesture] = useState<GestureState>('offline')
   const [zoomLevel, setZoomLevel] = useState(1)
+  const [explodeFactor, setExplodeFactor] = useState(0.0)
+  const [shellMode, setShellMode] = useState<'solid' | 'transparent' | 'hidden'>('solid')
+  const [showLabels, setShowLabels] = useState(true)
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -573,11 +761,11 @@ function App() {
 
     try {
       const params = new URLSearchParams({ q: searchText })
-      const searchResponse = await fetch(`http://localhost:8000/api/objects/search?${params.toString()}`)
-      const matches = await searchResponse.json()
-      const objectId = matches?.[0]?.id || 'car_engine'
-      const objectResponse = await fetch(`http://localhost:8000/api/objects/${objectId}`)
-      const objectData = await objectResponse.json()
+      const generateResponse = await fetch(`http://localhost:8000/api/objects/generate?${params.toString()}`, {
+        method: 'POST'
+      })
+      if (!generateResponse.ok) throw new Error('Generation failed')
+      const objectData = await generateResponse.json()
       setActiveObject(objectData)
       setSelectedComponent(objectData.components?.[0] || null)
       setActiveTab('research')
@@ -585,9 +773,9 @@ function App() {
     } catch {
       const fallback: ExplorableObject = {
         id: 'car_engine',
-        name: 'Car Engine',
+        name: 'Inline-4 Car Engine',
         type: 'mechanical_system',
-        summary: 'Offline demo car engine with clickable core components.',
+        summary: 'Offline high-fidelity inline-4 engine representation with realistic PBR styling.',
         defaultView: 'assembled',
         model: { kind: 'procedural', assetUrl: null },
         components: [
@@ -596,26 +784,180 @@ function App() {
             name: 'Engine Block',
             parentId: null,
             scaleLevel: 'component',
-            function: 'Holds the engine structure, cylinders, coolant passages, and oil channels.',
-            material: 'Cast aluminum or iron',
-            riskIfRemoved: 'The engine cannot exist structurally without it.',
+            function: 'Central structural block housing cylinders, cooling channels, and crankshaft support.',
+            material: 'Cast Iron',
+            riskIfRemoved: 'Engine structure collapses; no housing for cylinders or oil flow.',
             position: [0, 0, 0],
-            color: '#6f7f8f',
-            geometry: { type: 'box', size: [2.8, 1.25, 1.2] },
-            children: ['piston', 'cooling_fan'],
+            color: '#556270',
+            geometry: { type: 'box', size: [2.2, 0.8, 1.0] },
+            children: ['cylinder_head', 'oil_pan', 'crankshaft', 'piston_1', 'piston_2', 'piston_3', 'piston_4', 'cooling_fan'],
             microLevels: []
           },
           {
-            id: 'piston',
-            name: 'Piston',
+            id: 'cylinder_head',
+            name: 'Cylinder Head',
             parentId: 'engine_block',
             scaleLevel: 'subcomponent',
-            function: 'Compresses air-fuel mixture and receives combustion force.',
-            material: 'Aluminum alloy',
-            riskIfRemoved: 'The cylinder loses compression and power.',
-            position: [-0.82, 0.42, 0.05],
-            color: '#d8a45e',
-            geometry: { type: 'cylinder', radius: 0.28, depth: 0.56 },
+            function: 'Closes the top of the cylinders to form combustion chambers and houses valves.',
+            material: 'Aluminum Alloy',
+            riskIfRemoved: 'Loss of compression; combustion cannot occur.',
+            position: [0, 0.5, 0],
+            color: '#778899',
+            geometry: { type: 'box', size: [2.2, 0.2, 0.9] },
+            children: [],
+            microLevels: []
+          },
+          {
+            id: 'oil_pan',
+            name: 'Oil Pan',
+            parentId: 'engine_block',
+            scaleLevel: 'subcomponent',
+            function: 'Reservoir for engine oil and collects lubricating fluid under the block.',
+            material: 'Pressed Steel',
+            riskIfRemoved: 'Oil leaks immediately, causing severe engine seizure due to lack of lubrication.',
+            position: [0, -0.5, 0],
+            color: '#2c3e50',
+            geometry: { type: 'box', size: [2.0, 0.2, 0.8] },
+            children: [],
+            microLevels: []
+          },
+          {
+            id: 'crankshaft',
+            name: 'Crankshaft',
+            parentId: 'engine_block',
+            scaleLevel: 'subcomponent',
+            function: 'Converts linear piston motion into rotational force for the drivetrain.',
+            material: 'Forged Steel',
+            riskIfRemoved: 'Linear piston energy cannot be converted to mechanical drive.',
+            position: [0, -0.3, 0],
+            color: '#a8b2c1',
+            geometry: { type: 'cylinder', radius: 0.1, depth: 2.2, rotation: [0, 0, 1.57] },
+            children: ['flywheel'],
+            microLevels: []
+          },
+          {
+            id: 'flywheel',
+            name: 'Flywheel',
+            parentId: 'crankshaft',
+            scaleLevel: 'subcomponent',
+            function: 'Heavy disk storing rotational inertia to smooth out engine cycles.',
+            material: 'Cast Iron',
+            riskIfRemoved: 'Severe engine vibration and stalling between power strokes.',
+            position: [1.15, -0.3, 0],
+            color: '#34495e',
+            geometry: { type: 'cylinder', radius: 0.45, depth: 0.1, rotation: [0, 0, 1.57] },
+            children: [],
+            microLevels: []
+          },
+          {
+            id: 'piston_1',
+            name: 'Piston 1',
+            parentId: 'engine_block',
+            scaleLevel: 'subcomponent',
+            function: 'Reciprocating piston that compresses air-fuel mixture and transmits combustion pressure.',
+            material: 'Aluminum Alloy',
+            riskIfRemoved: 'Cylinder 1 loses power and creates severe balance issues.',
+            position: [-0.75, 0.1, 0.0],
+            color: '#dfe6e9',
+            geometry: { type: 'cylinder', radius: 0.22, depth: 0.35 },
+            children: ['connecting_rod_1'],
+            microLevels: []
+          },
+          {
+            id: 'connecting_rod_1',
+            name: 'Connecting Rod 1',
+            parentId: 'piston_1',
+            scaleLevel: 'subcomponent',
+            function: 'Connects piston 1 to the crankshaft, translating linear motion.',
+            material: 'Forged Steel',
+            riskIfRemoved: 'Piston 1 motion is disconnected from the crankshaft.',
+            position: [-0.75, -0.15, 0.0],
+            color: '#7f8c8d',
+            geometry: { type: 'cylinder', radius: 0.05, depth: 0.3 },
+            children: [],
+            microLevels: []
+          },
+          {
+            id: 'piston_2',
+            name: 'Piston 2',
+            parentId: 'engine_block',
+            scaleLevel: 'subcomponent',
+            function: 'Reciprocating piston that compresses air-fuel mixture and transmits combustion pressure.',
+            material: 'Aluminum Alloy',
+            riskIfRemoved: 'Cylinder 2 loses power.',
+            position: [-0.25, 0.1, 0.0],
+            color: '#dfe6e9',
+            geometry: { type: 'cylinder', radius: 0.22, depth: 0.35 },
+            children: ['connecting_rod_2'],
+            microLevels: []
+          },
+          {
+            id: 'connecting_rod_2',
+            name: 'Connecting Rod 2',
+            parentId: 'piston_2',
+            scaleLevel: 'subcomponent',
+            function: 'Connects piston 2 to the crankshaft, translating linear motion.',
+            material: 'Forged Steel',
+            riskIfRemoved: 'Piston 2 motion is disconnected.',
+            position: [-0.25, -0.15, 0.0],
+            color: '#7f8c8d',
+            geometry: { type: 'cylinder', radius: 0.05, depth: 0.3 },
+            children: [],
+            microLevels: []
+          },
+          {
+            id: 'piston_3',
+            name: 'Piston 3',
+            parentId: 'engine_block',
+            scaleLevel: 'subcomponent',
+            function: 'Reciprocating piston that compresses air-fuel mixture and transmits combustion pressure.',
+            material: 'Aluminum Alloy',
+            riskIfRemoved: 'Cylinder 3 loses power.',
+            position: [0.25, 0.1, 0.0],
+            color: '#dfe6e9',
+            geometry: { type: 'cylinder', radius: 0.22, depth: 0.35 },
+            children: ['connecting_rod_3'],
+            microLevels: []
+          },
+          {
+            id: 'connecting_rod_3',
+            name: 'Connecting Rod 3',
+            parentId: 'piston_3',
+            scaleLevel: 'subcomponent',
+            function: 'Connects piston 3 to the crankshaft, translating linear motion.',
+            material: 'Forged Steel',
+            riskIfRemoved: 'Piston 3 motion is disconnected.',
+            position: [0.25, -0.15, 0.0],
+            color: '#7f8c8d',
+            geometry: { type: 'cylinder', radius: 0.05, depth: 0.3 },
+            children: [],
+            microLevels: []
+          },
+          {
+            id: 'piston_4',
+            name: 'Piston 4',
+            parentId: 'engine_block',
+            scaleLevel: 'subcomponent',
+            function: 'Reciprocating piston that compresses air-fuel mixture and transmits combustion pressure.',
+            material: 'Aluminum Alloy',
+            riskIfRemoved: 'Cylinder 4 loses power.',
+            position: [0.75, 0.1, 0.0],
+            color: '#dfe6e9',
+            geometry: { type: 'cylinder', radius: 0.22, depth: 0.35 },
+            children: ['connecting_rod_4'],
+            microLevels: []
+          },
+          {
+            id: 'connecting_rod_4',
+            name: 'Connecting Rod 4',
+            parentId: 'piston_4',
+            scaleLevel: 'subcomponent',
+            function: 'Connects piston 4 to the crankshaft, translating linear motion.',
+            material: 'Forged Steel',
+            riskIfRemoved: 'Piston 4 motion is disconnected.',
+            position: [0.75, -0.15, 0.0],
+            color: '#7f8c8d',
+            geometry: { type: 'cylinder', radius: 0.05, depth: 0.3 },
             children: [],
             microLevels: []
           },
@@ -624,12 +966,12 @@ function App() {
             name: 'Cooling Fan',
             parentId: 'engine_block',
             scaleLevel: 'subcomponent',
-            function: 'Moves air to help remove heat from the cooling system.',
-            material: 'Composite plastic',
-            riskIfRemoved: 'Heat rises quickly during low-speed operation.',
-            position: [1.82, 0.02, 0],
-            color: '#64d2ff',
-            geometry: { type: 'fan', radius: 0.44, blades: 6 },
+            function: 'Pulls cooling air through radiator to prevent overheating.',
+            material: 'Composite Polymer',
+            riskIfRemoved: 'Engine runs hot under load, high thermal seizure risk.',
+            position: [-1.25, 0.0, 0.0],
+            color: '#2f3640',
+            geometry: { type: 'fan', radius: 0.5, blades: 6, rotation: [0, 0, 1.57] },
             children: [],
             microLevels: []
           }
@@ -653,9 +995,46 @@ function App() {
     if (lower.includes('status')) setActiveTab('status')
     if (lower.includes('research') || lower.includes('analyze')) setActiveTab('research')
     if (lower.includes('car') || lower.includes('engine') || lower.includes('search')) void searchObject(command)
-    if (lower.includes('zoom in')) setZoomLevel((value) => Math.min(4, value + 0.5))
-    if (lower.includes('zoom out')) setZoomLevel((value) => Math.max(0, value - 0.5))
-    if (lower.includes('reset')) setZoomLevel(1)
+    if (lower.includes('zoom in') || lower.includes('zoom-in') || lower.includes('pass aao')) {
+      setZoomLevel((value) => Math.min(100, value * 1.5))
+    }
+    if (lower.includes('zoom out') || lower.includes('zoom-out') || lower.includes('dur jao')) {
+      setZoomLevel((value) => Math.max(1, value / 1.5))
+    }
+    if (lower.includes('dismantle') || lower.includes('explode') || lower.includes('alag karna') || lower.includes('dismant')) {
+      setExplodeFactor(1.2)
+      speak("Dismantling components to exploded view.")
+    }
+    if (lower.includes('assemble') || lower.includes('jodna') || lower.includes('jode')) {
+      setExplodeFactor(0.0)
+      speak("Assembling components back to default view.")
+    }
+    if (lower.includes('remove cover') || lower.includes('hide cover') || lower.includes('cover hata') || lower.includes('hide block')) {
+      setShellMode('hidden')
+      speak("Outer covers removed. Internal components are now visible.")
+    }
+    if (lower.includes('glass cover') || lower.includes('transparent cover') || lower.includes('glass mode') || lower.includes('glass block')) {
+      setShellMode('transparent')
+      speak("Outer covers set to transparent glass.")
+    }
+    if (lower.includes('show cover') || lower.includes('solid cover') || lower.includes('cover dikha')) {
+      setShellMode('solid')
+      speak("Outer covers restored to solid.")
+    }
+    if (lower.includes('hide label') || lower.includes('remove label') || lower.includes('label hata')) {
+      setShowLabels(false)
+      speak("Viewport labels hidden.")
+    }
+    if (lower.includes('show label') || lower.includes('label dikha')) {
+      setShowLabels(true)
+      speak("Viewport labels restored.")
+    }
+    if (lower.includes('reset')) {
+      setZoomLevel(1)
+      setExplodeFactor(0)
+      setShellMode('solid')
+      setShowLabels(true)
+    }
 
     setAriaState('thinking')
     setAriaReply(`Processing command: ${command}`)
@@ -722,10 +1101,10 @@ function App() {
     if (lastPinch !== null) {
       if (pinch < lastPinch - 0.035) {
         setGesture('zoom-in')
-        setZoomLevel((value) => Math.min(4, value + 0.08))
+        setZoomLevel((value) => Math.min(100, value * 1.05))
       } else if (pinch > lastPinch + 0.035) {
         setGesture('zoom-out')
-        setZoomLevel((value) => Math.max(0, value - 0.08))
+        setZoomLevel((value) => Math.max(1, value / 1.05))
       }
     }
 
@@ -733,6 +1112,9 @@ function App() {
     if (extended <= 1) {
       setGesture('fist')
       setZoomLevel(1)
+      setExplodeFactor(0)
+      setShellMode('solid')
+      setShowLabels(true)
     } else if (extended === 1) {
       setGesture('point')
     }
@@ -823,10 +1205,17 @@ function App() {
         videoRef={videoRef}
         gesture={gesture}
         zoomLevel={zoomLevel}
+        setZoomLevel={setZoomLevel}
         activeObject={activeObject}
         selectedComponent={selectedComponent}
         onObjectSearch={() => void searchObject()}
         onSelectComponent={selectComponent}
+        explodeFactor={explodeFactor}
+        setExplodeFactor={setExplodeFactor}
+        shellMode={shellMode}
+        setShellMode={setShellMode}
+        showLabels={showLabels}
+        setShowLabels={setShowLabels}
       />
     ),
     results: <ResultsScreen />

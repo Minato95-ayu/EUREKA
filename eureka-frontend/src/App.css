@@ -904,3 +904,137 @@ button {
     font-size: 19px;
   }
 }
+
+/* Viewport Interactive Controls Dashboard */
+.viewport-controls-overlay {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 250px;
+  max-height: calc(100% - 30px);
+  overflow-y: auto;
+  background: rgba(7, 16, 24, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 229, 240, 0.25);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 10;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.viewport-controls-overlay::-webkit-scrollbar {
+  width: 4px;
+}
+.viewport-controls-overlay::-webkit-scrollbar-thumb {
+  background: var(--cyan);
+  border-radius: 2px;
+}
+
+.viewport-controls-overlay .control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.viewport-controls-overlay .control-group.inline {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.viewport-controls-overlay label {
+  font: 700 11px/1.2 ui-monospace, monospace;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.viewport-controls-overlay .slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.viewport-controls-overlay input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+
+.viewport-controls-overlay input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--cyan);
+  transition: transform 0.1s ease;
+}
+
+.viewport-controls-overlay input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.viewport-controls-overlay .control-val {
+  font: 700 12px ui-monospace, monospace;
+  color: var(--text);
+  min-width: 32px;
+  text-align: right;
+}
+
+.viewport-controls-overlay .btn-toggle-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.viewport-controls-overlay .btn-toggle-group button {
+  padding: 6px 4px;
+  font: 700 10px ui-monospace, monospace;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.viewport-controls-overlay .btn-toggle-group button:hover {
+  border-color: rgba(0, 229, 240, 0.4);
+  color: var(--text);
+}
+
+.viewport-controls-overlay .btn-toggle-group button.active {
+  color: #031015;
+  background: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px rgba(0, 229, 240, 0.4);
+}
+
+.viewport-controls-overlay .toggle-switch {
+  padding: 4px 10px;
+  font: 700 10px ui-monospace, monospace;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewport-controls-overlay .toggle-switch.active {
+  color: #031015;
+  background: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px rgba(0, 229, 240, 0.4);
+}
