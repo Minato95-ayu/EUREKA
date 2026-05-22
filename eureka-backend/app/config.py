@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     OLLAMA_HOST: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3"
     OLLAMA_TIMEOUT: int = 300
+    DEFAULT_GENERATION_MODEL: str = "llama3"
+    GENERATOR_TEMPERATURE: float = 0.1
     
     # Database settings
     DATABASE_URL: str = "postgresql://user:password@localhost/eureka"

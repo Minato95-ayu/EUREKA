@@ -6,6 +6,7 @@ from app.agents.research_agent import ResearchIntegratorAgent
 from typing import Dict, Any
 import logging
 import json
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ When coordinating:
 5. Provide clear recommendations"""
     
     async def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process request and coordinate agents"""
+        """Process request and coordinate agents in parallel"""
         
         user_message = request.get("message", "")
         experiment_context = request.get("context", {})
@@ -54,33 +55,44 @@ When coordinating:
         agents_needed = self._determine_agents(user_message)
         logger.info(f"Agents needed: {agents_needed}")
         
-        # Collect responses from agents
-        agent_responses = {}
+        # Collect responses from agents in parallel
+        keys = []
+        tasks = []
         
         if "explainer" in agents_needed:
-            agent_responses["explainer"] = await self.explainer.process({
+            keys.append("explainer")
+            tasks.append(self.explainer.process({
                 "question": user_message,
                 "context": experiment_context
-            })
+            }))
         
         if "analyzer" in agents_needed:
-            agent_responses["analyzer"] = await self.analyzer.process({
+            keys.append("analyzer")
+            tasks.append(self.analyzer.process({
                 "molecule": experiment_context.get("current_molecule", ""),
                 "context": experiment_context
-            })
+            }))
         
         if "thinker" in agents_needed:
-            agent_responses["thinker"] = await self.thinker.process({
+            keys.append("thinker")
+            tasks.append(self.thinker.process({
                 "scenario": user_message,
                 "variables": experiment_context.get("variables", {}),
                 "context": experiment_context
-            })
+            }))
         
         if "research" in agents_needed:
-            agent_responses["research"] = await self.research.process({
+            keys.append("research")
+            tasks.append(self.research.process({
                 "query": user_message,
                 "context": experiment_context
-            })
+            }))
+        
+        if tasks:
+            results = await asyncio.gather(*tasks)
+            agent_responses = dict(zip(keys, results))
+        else:
+            agent_responses = {}
         
         # Synthesize responses
         unified_response = await self._synthesize_responses(
@@ -146,6 +158,48 @@ Synthesize these responses into a single, coherent answer that:
 
 Provide a professional, comprehensive response."""
         
-        unified = await self.generate_response(synthesis_prompt)
+        try:
+            unified = await self.generate_response(synthesis_prompt)
+            if not unified or unified.strip() == "" or unified.startswith("Error") or "Error generating response" in unified:
+                raise ValueError("Ollama response empty or error flag returned")
+        except Exception as e:
+            logger.info(f"HelperAgent synthesis failed/offline: {e}. Falling back to rule-based synthesis.")
+            unified = self._get_fallback_synthesis(user_message, agent_responses)
         
         return unified
+
+    def _get_fallback_synthesis(self, user_message: str, agent_responses: Dict[str, str]) -> str:
+        ctx = self._parse_context_from_message(user_message)
+        comp_name = ctx["component"]
+        obj_name = ctx["object"]
+        
+        target = comp_name if comp_name != "unknown" else obj_name
+        if target == "unknown":
+            target = "Mechanical System"
+            
+        md = f"# EUREKA Unified Scientific Report: {target}\n\n"
+        md += "Synthesis of individual specialist agent reviews for this component:\n\n"
+        
+        if "explainer" in agent_responses:
+            md += "## 1. Functional Overview & Material Specs\n"
+            md += agent_responses["explainer"] + "\n\n"
+            
+        if "analyzer" in agent_responses:
+            md += "## 2. Physical & Thermodynamic Analysis\n"
+            md += agent_responses["analyzer"] + "\n\n"
+            
+        if "thinker" in agent_responses:
+            md += "## 3. What-If Risk Assessment\n"
+            md += agent_responses["thinker"] + "\n\n"
+            
+        if "research" in agent_responses:
+            md += "## 4. Academic Literature Synthesis\n"
+            md += agent_responses["research"] + "\n\n"
+            
+        md += "### Master Coordinator Recommendations\n"
+        md += "Based on the multi-agent analysis, we recommend:\n"
+        md += "1. **Stress Distribution Verification:** Ensure that any structural modifications do not lead to localized thermal or stress concentrations.\n"
+        md += "2. **Redundancy Planning:** If removing this component is planned for weight reductions, model alternative structural load paths or twin control linkages.\n\n"
+        md += "--- \n*Note: Compiled by EUREKA Coordinator in Offline Synthesis Mode.*"
+        
+        return md
