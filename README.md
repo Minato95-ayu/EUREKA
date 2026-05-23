@@ -31,6 +31,7 @@
 - [✨ Key Features Breakdown](#-key-features-breakdown)
 - [🧠 ARIA & The Multi-Agent Mesh](#-aria--the-multi-agent-mesh)
 - [🏗️ System Architecture & Workflow](#️-system-architecture--workflow)
+- [💻 Language & Technology Breakdown](#-language--technology-breakdown)
 - [📂 Detailed Project Structure](#-detailed-project-structure)
 - [🚀 Quick Start (Docker & Local)](#-quick-start-docker--local)
 - [🛡️ Security & Compliance](#️-security--compliance)
@@ -136,6 +137,22 @@ sequenceDiagram
     User->>FE: Use Hand Gestures (MediaPipe) / Speak (Web Speech)
     FE->>User: Perform action (Zoom/Analyze) & ARIA replies verbally
 ```
+
+---
+
+## 💻 Language & Technology Breakdown
+
+EUREKA leverages a multi-tier programming model. The following breakdown maps the repository's codebase statistics (detected by GitHub) directly to their operational roles and under-the-hood machine acceleration technologies:
+
+| Language | Repository % | Role & Component Area | Under-the-Hood Technologies |
+| :--- | :--- | :--- | :--- |
+| **🐍 Python** | **73.2%** | FastAPI Server, AI Multi-Agent Core, Verlet 3D Physics Simulator | **C++** (RDKit chemistry bindings), **Cython** (`uvloop` high-concurrency event loops) |
+| **🔷 TypeScript** | **20.6%** | Cyber-lab Dashboard (React 19), Automation Scraper (BullMQ, Node.js) | **WebAssembly (Wasm)** (MediaPipe deep learning), **GLSL** (GPU shaders via R3F/Three.js) |
+| **🎨 CSS** | **4.7%** | Dashboard glassmorphism, responsive grids, and cyber-lab visual effects | Flexbox, CSS variables, hardware-accelerated filters |
+| **🐚 Shell** | **1.0%** | Setup Automation, deployment scripts, and local model loaders | Bash (Linux) & PowerShell (Windows) scripting |
+| **🐳 Dockerfile** | **0.3%** | Container build scripts for database, Redis, frontend, and backend | Multi-stage secure build, unprivileged user execution boundaries |
+| **💛 JavaScript** | **0.1%** | Web Speech API wrappers, config loaders, and bundling hooks | Browser Web Speech Recognition & Web Audio APIs |
+| **🧡 HTML** | **0.1%** | Main single-page web template & meta search engine optimization tags | Semantic HTML5 structure |
 
 ---
 
