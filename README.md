@@ -299,7 +299,7 @@ pytest -v --cov=app
 <table border="0" cellpadding="10" cellspacing="0">
   <tr>
     <td valign="top" width="180">
-      <img src="docs/assets/ayush_kaushik.jpg" alt="Ayush Kaushik" width="160" style="border-radius: 16px; border: 3px solid #009688; box-shadow: 0 8px 16px rgba(0, 150, 136, 0.4);" />
+      <img src="docs/assets/ayush_kaushik.png" alt="Ayush Kaushik" width="160" style="border-radius: 16px; border: 3px solid #009688; box-shadow: 0 8px 16px rgba(0, 150, 136, 0.4);" />
     </td>
     <td valign="top">
       <h3>Ayush Kaushik</h3>
