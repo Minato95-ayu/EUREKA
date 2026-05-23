@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Sphere, MeshDistortMaterial, Html, Edges, Environment, ContactShadows } from '@react-three/drei'
+import { OrbitControls, Sphere, MeshDistortMaterial, Html, Edges, Environment, ContactShadows, useGLTF, Stage, RoundedBox, Cylinder, Capsule, Cone, Torus } from '@react-three/drei'
+import { EffectComposer, Bloom, N8AO, Vignette, ToneMapping } from '@react-three/postprocessing'
+import { ToneMappingMode } from 'postprocessing'
+import { Geometry, Base, Subtraction } from '@react-three/csg'
 import type { Hands as MediaPipeHands, Results } from '@mediapipe/hands'
 import type { Group } from 'three'
+import * as THREE from 'three'
 import './App.css'
 
 type Tab = 'status' | 'batch' | 'pipeline' | 'research' | 'results'
@@ -11,12 +15,16 @@ type GestureState = 'offline' | 'ready' | 'zoom-in' | 'zoom-out' | 'point' | 'fi
 type ScaleLevel = 'object' | 'component' | 'subcomponent' | 'material' | 'molecule' | 'atom'
 
 type ObjectGeometry = {
-  type: 'box' | 'cylinder' | 'capsule' | 'fan'
+  type: 'box' | 'cylinder' | 'capsule' | 'fan' | 'gltf' | 'sphere' | 'cone' | 'torus' | 'hemisphere' | 'rounded_box' | 'lathe' | 'csg'
   size?: [number, number, number]
   radius?: number
   depth?: number
   blades?: number
   rotation?: [number, number, number]
+  url?: string
+  tube?: number
+  base?: ObjectGeometry & { position?: [number, number, number] }
+  subtractions?: (ObjectGeometry & { position?: [number, number, number] })[]
 }
 
 type ObjectComponent = {
@@ -142,7 +150,8 @@ function ComponentMesh({
   onSelect,
   explodeFactor,
   shellMode,
-  showLabels
+  showLabels,
+  isAnimating
 }: {
   component: ObjectComponent
   selected: boolean
@@ -150,6 +159,7 @@ function ComponentMesh({
   explodeFactor: number
   shellMode: 'solid' | 'transparent' | 'hidden'
   showLabels: boolean
+  isAnimating: boolean
 }) {
   const geometry = component.geometry
   const rotation = geometry.rotation || [0, 0, 0]
@@ -181,54 +191,123 @@ function ComponentMesh({
     let metalness = 0.3
     let transparent = false
     let opacity = 1.0
+    let clearcoat = 0.0
+    let clearcoatRoughness = 0.1
+    let usePhysical = false
+    let ior = 1.5
+    let transmission = 0.0
+    let thickness = 0.0
+    let envMapIntensity = 1.5
 
     if (shellMode === 'transparent' && isCover) {
-      roughness = 0.05
-      metalness = 0.95
+      roughness = 0.0
+      metalness = 0.0
       transparent = true
-      opacity = 0.15
+      opacity = 0.12
+      usePhysical = true
+      transmission = 0.95
+      ior = 1.52
+      thickness = 0.5
+      clearcoat = 1.0
+      clearcoatRoughness = 0.0
+      envMapIntensity = 2.5
     } else {
-      if (matName.includes('iron')) {
-        roughness = 0.6
-        metalness = 0.8
-      } else if (matName.includes('steel') || matName.includes('chrome') || matName.includes('metal')) {
+      if (matName.includes('iron') || matName.includes('cast')) {
+        roughness = 0.55
+        metalness = 0.85
+        clearcoat = 0.15
+        envMapIntensity = 1.2
+      } else if (matName.includes('steel') || matName.includes('chrome') || matName.includes('metal') || matName.includes('forged')) {
+        roughness = 0.08
+        metalness = 0.98
+        usePhysical = true
+        clearcoat = 0.8
+        clearcoatRoughness = 0.05
+        envMapIntensity = 2.0
+      } else if (matName.includes('aluminum') || matName.includes('alloy')) {
+        roughness = 0.2
+        metalness = 0.92
+        usePhysical = true
+        clearcoat = 0.4
+        clearcoatRoughness = 0.1
+        envMapIntensity = 1.8
+      } else if (matName.includes('copper') || matName.includes('brass') || matName.includes('bronze')) {
         roughness = 0.15
         metalness = 0.95
-      } else if (matName.includes('aluminum') || matName.includes('alloy')) {
-        roughness = 0.3
-        metalness = 0.85
-      } else if (matName.includes('copper') || matName.includes('brass') || matName.includes('bronze')) {
-        roughness = 0.2
-        metalness = 0.9
+        usePhysical = true
+        clearcoat = 0.6
+        clearcoatRoughness = 0.08
+        envMapIntensity = 1.6
       } else if (matName.includes('carbon') || matName.includes('fiber')) {
-        roughness = 0.45
-        metalness = 0.1
+        roughness = 0.35
+        metalness = 0.05
+        usePhysical = true
+        clearcoat = 1.0
+        clearcoatRoughness = 0.03
+        envMapIntensity = 1.0
       } else if (matName.includes('glass') || matName.includes('lens') || matName.includes('optical')) {
-        roughness = 0.05
-        metalness = 0.9
+        roughness = 0.0
+        metalness = 0.0
         transparent = true
-        opacity = 0.35
+        opacity = 0.25
+        usePhysical = true
+        transmission = 0.9
+        ior = 1.52
+        thickness = 0.3
+        clearcoat = 1.0
+        clearcoatRoughness = 0.0
+        envMapIntensity = 2.5
+      } else if (matName.includes('rubber') || matName.includes('belt') || matName.includes('gasket')) {
+        roughness = 0.85
+        metalness = 0.0
+        envMapIntensity = 0.4
       } else if (matName.includes('polymer') || matName.includes('plastic') || matName.includes('composite')) {
-        roughness = 0.5
-        metalness = 0.1
+        roughness = 0.45
+        metalness = 0.05
+        clearcoat = 0.3
+        envMapIntensity = 0.8
+      } else {
+        // Default: generic metallic surface
+        roughness = 0.35
+        metalness = 0.6
+        clearcoat = 0.2
+        envMapIntensity = 1.3
       }
     }
 
-    return { roughness, metalness, transparent, opacity }
+    return { roughness, metalness, transparent, opacity, clearcoat, clearcoatRoughness, usePhysical, ior, transmission, thickness, envMapIntensity }
   }, [component.material, shellMode, isCover])
 
   if (shellMode === 'hidden' && isCover) {
     return null
   }
 
-  const material = (
-    <meshStandardMaterial
+  const material = materialProps.usePhysical ? (
+    <meshPhysicalMaterial
       color={component.color}
-      emissive={selected ? '#145b63' : '#071114'}
+      emissive={selected ? '#1a7a85' : '#050a0c'}
+      emissiveIntensity={selected ? 0.6 : 0.15}
       roughness={materialProps.roughness}
       metalness={materialProps.metalness}
       transparent={materialProps.transparent}
       opacity={materialProps.opacity}
+      clearcoat={materialProps.clearcoat}
+      clearcoatRoughness={materialProps.clearcoatRoughness}
+      ior={materialProps.ior}
+      transmission={materialProps.transmission}
+      thickness={materialProps.thickness}
+      envMapIntensity={materialProps.envMapIntensity}
+    />
+  ) : (
+    <meshStandardMaterial
+      color={component.color}
+      emissive={selected ? '#1a7a85' : '#050a0c'}
+      emissiveIntensity={selected ? 0.5 : 0.1}
+      roughness={materialProps.roughness}
+      metalness={materialProps.metalness}
+      transparent={materialProps.transparent}
+      opacity={materialProps.opacity}
+      envMapIntensity={materialProps.envMapIntensity}
     />
   )
 
@@ -240,11 +319,82 @@ function ComponentMesh({
   const edgeColor = selected ? '#00ffff' : '#2b6cb0'
   const edgeThickness = selected ? 2 : 1
 
-  if (geometry.type === 'fan') {
+  const groupRef = useRef<THREE.Group>(null)
+  const timeRef = useRef(0)
+
+  useFrame((state, delta) => {
+    if (!groupRef.current) return
+    if (isAnimating) {
+      timeRef.current += delta
+    }
+    const t = timeRef.current
+    const name = component.name.toLowerCase()
+    const id = component.id.toLowerCase()
+    
+    // Animation speeds and offsets
+    const rpm = 25
+    
+    if (name.includes('piston') || id.includes('piston')) {
+      const numMatch = name.match(/\d+/) || id.match(/\d+/)
+      const offset = numMatch ? parseInt(numMatch[0]) * Math.PI / 2 : 0
+      groupRef.current.position.y = displacedPos[1] + Math.sin(t * rpm + offset) * 0.12
+    }
+    
+    if (name.includes('crankshaft') || id.includes('crankshaft') || name.includes('camshaft')) {
+      groupRef.current.rotation.z = rotation[2] + t * rpm
+    }
+    
+    if (geometry.type === 'fan' || name.includes('fan') || name.includes('pulley') || name.includes('alternator') || name.includes('flywheel')) {
+      groupRef.current.rotation.z = rotation[2] + t * rpm
+    }
+  })
+
+  // Helper to get pure primitive geometry for CSG
+  const getRawGeometry = (geom: ObjectGeometry) => {
+    if (geom.type === 'box') return <boxGeometry args={geom.size || [1, 1, 1]} />
+    if (geom.type === 'cylinder' || geom.type === 'capsule') return <cylinderGeometry args={[geom.radius || 0.2, geom.radius || 0.2, geom.depth || 0.6, 32]} />
+    if (geom.type === 'sphere') return <sphereGeometry args={[geom.radius || 0.3, 64, 64]} />
+    if (geom.type === 'cone') return <coneGeometry args={[geom.radius || 0.3, geom.depth || 0.6, 32]} />
+    if (geom.type === 'torus') return <torusGeometry args={[geom.radius || 0.4, geom.tube || 0.08, 24, 48]} />
+    if (geom.type === 'hemisphere') return <sphereGeometry args={[geom.radius || 0.3, 64, 64, 0, Math.PI * 2, 0, Math.PI / 2]} />
+    if (geom.type === 'lathe') {
+      const r = geom.radius || 0.4
+      const h = geom.depth || 0.3
+      const pts = [[0,-h/2], [r*0.7,-h/2], [r,-h/4], [r,h/4], [r*0.7,h/2], [0,h/2]].map(([x,y]) => new THREE.Vector2(x,y))
+      return <latheGeometry args={[pts, 48]} />
+    }
+    return <boxGeometry args={geom.size || [1, 1, 1]} />
+  }
+
+  let innerContent = null;
+
+  if (geometry.type === 'csg') {
+    innerContent = (
+      <mesh castShadow receiveShadow>
+        <Geometry>
+          <Base position={geometry.base?.position || [0,0,0]} rotation={geometry.base?.rotation || [0,0,0]}>
+            {getRawGeometry(geometry.base || { type: 'box' })}
+          </Base>
+          {geometry.subtractions?.map((sub, idx) => (
+            <Subtraction key={idx} position={sub.position || [0,0,0]} rotation={sub.rotation || [0,0,0]}>
+              {getRawGeometry(sub)}
+            </Subtraction>
+          ))}
+        </Geometry>
+        {material}
+        <Edges color={edgeColor} thickness={edgeThickness} />
+        {showLabels && (
+          <Html position={[0, (geometry.base?.size?.[1] || geometry.base?.depth || 0.6) / 2 + 0.15, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </mesh>
+    )
+  } else if (geometry.type === 'fan') {
     const blades = geometry.blades || 6
     const radius = geometry.radius || 0.42
-    return (
-      <group position={displacedPos} rotation={rotation} onPointerDown={handlePointerDown}>
+    innerContent = (
+      <>
         <mesh castShadow receiveShadow>
           <torusGeometry args={[radius, 0.025, 10, 48]} />
           {material}
@@ -262,25 +412,157 @@ function ComponentMesh({
             <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
           </Html>
         )}
-      </group>
+      </>
+    )
+  } else if (geometry.type === 'gltf' && geometry.url) {
+    innerContent = (
+      <>
+        <GltfModelWrapper url={geometry.url} materialProps={materialProps} selected={selected} />
+        {showLabels && (
+          <Html position={[0, 0.5, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </>
+    )
+  } else if (geometry.type === 'sphere') {
+    innerContent = (
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[geometry.radius || 0.3, 64, 64]} />
+        {material}
+        <Edges color={edgeColor} thickness={edgeThickness} />
+        {showLabels && (
+          <Html position={[0, (geometry.radius || 0.3) + 0.15, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </mesh>
+    )
+  } else if (geometry.type === 'cone') {
+    innerContent = (
+      <mesh castShadow receiveShadow>
+        <coneGeometry args={[geometry.radius || 0.3, geometry.depth || 0.6, 32]} />
+        {material}
+        <Edges color={edgeColor} thickness={edgeThickness} />
+        {showLabels && (
+          <Html position={[0, (geometry.depth || 0.6) / 2 + 0.15, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </mesh>
+    )
+  } else if (geometry.type === 'torus') {
+    innerContent = (
+      <mesh castShadow receiveShadow>
+        <torusGeometry args={[geometry.radius || 0.4, geometry.tube || 0.08, 24, 48]} />
+        {material}
+        <Edges color={edgeColor} thickness={edgeThickness} />
+        {showLabels && (
+          <Html position={[0, (geometry.radius || 0.4) + 0.2, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </mesh>
+    )
+  } else if (geometry.type === 'hemisphere') {
+    innerContent = (
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[geometry.radius || 0.3, 64, 64, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        {material}
+        {showLabels && (
+          <Html position={[0, (geometry.radius || 0.3) + 0.1, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </mesh>
+    )
+  } else if (geometry.type === 'rounded_box') {
+    const rbSize = geometry.size || [1, 1, 1]
+    innerContent = (
+      <mesh castShadow receiveShadow>
+        <RoundedBox args={rbSize as [number, number, number]} radius={geometry.radius || 0.05} smoothness={4}>
+          {material}
+        </RoundedBox>
+        {showLabels && (
+          <Html position={[0, (rbSize[1] || 1) / 2 + 0.2, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </mesh>
+    )
+  } else if (geometry.type === 'lathe') {
+    const segments = 48
+    const r = geometry.radius || 0.4
+    const h = geometry.depth || 0.3
+    const points: [number, number][] = [
+      [0, -h/2], [r * 0.7, -h/2], [r, -h/4], [r, h/4], [r * 0.7, h/2], [0, h/2]
+    ]
+    innerContent = (
+      <mesh castShadow receiveShadow>
+        <latheGeometry args={[points.map(([x,y]) => new THREE.Vector2(x,y)), segments]} />
+        {material}
+        {showLabels && (
+          <Html position={[0, h / 2 + 0.15, 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </mesh>
+    )
+  } else {
+    innerContent = (
+      <mesh castShadow receiveShadow>
+        {geometry.type === 'box' && <boxGeometry args={geometry.size || [1, 1, 1]} />}
+        {(geometry.type === 'cylinder' || geometry.type === 'capsule') && (
+          <cylinderGeometry args={[geometry.radius || 0.2, geometry.radius || 0.2, geometry.depth || 0.6, 32]} />
+        )}
+        {material}
+        <Edges color={edgeColor} thickness={edgeThickness} />
+        {showLabels && (
+          <Html position={[0, geometry.type === 'box' ? (geometry.size?.[1] ? geometry.size[1]/2 + 0.32 : 0.82) : (geometry.depth ? geometry.depth/2 + 0.18 : 0.48), 0]} center>
+            <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+          </Html>
+        )}
+      </mesh>
     )
   }
 
   return (
-    <mesh position={displacedPos} rotation={rotation} onPointerDown={handlePointerDown} castShadow receiveShadow>
-      {geometry.type === 'box' && <boxGeometry args={geometry.size || [1, 1, 1]} />}
-      {(geometry.type === 'cylinder' || geometry.type === 'capsule') && (
-        <cylinderGeometry args={[geometry.radius || 0.2, geometry.radius || 0.2, geometry.depth || 0.6, 32]} />
-      )}
-      {material}
-      <Edges color={edgeColor} thickness={edgeThickness} />
-      {showLabels && (
-        <Html position={[0, geometry.type === 'box' ? (geometry.size?.[1] ? geometry.size[1]/2 + 0.32 : 0.82) : (geometry.depth ? geometry.depth/2 + 0.18 : 0.48), 0]} center>
-          <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
-        </Html>
-      )}
-    </mesh>
+    <group ref={groupRef} position={displacedPos} rotation={rotation} onPointerDown={handlePointerDown}>
+      {innerContent}
+    </group>
   )
+}
+
+function GltfModelWrapper({ url, materialProps, selected }: { url: string, materialProps: any, selected: boolean }) {
+  const { scene } = useGLTF(url)
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone()
+    clone.traverse((child: any) => {
+      if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+        if (child.material) {
+          child.material = child.material.clone()
+          child.material.transparent = materialProps.transparent
+          child.material.opacity = materialProps.opacity
+          
+          if (materialProps.transparent) {
+            child.material.roughness = materialProps.roughness
+            child.material.metalness = materialProps.metalness
+          }
+          
+          if (selected) {
+            child.material.emissive.set('#145b63')
+            child.material.emissiveIntensity = 0.5
+          } else {
+            child.material.emissive.setHex(0x000000)
+          }
+        }
+      }
+    })
+    return clone
+  }, [scene, materialProps, selected])
+  return <primitive object={clonedScene} />
 }
 
 function LabScene({
@@ -291,7 +573,8 @@ function LabScene({
   onSelectComponent,
   explodeFactor,
   shellMode,
-  showLabels
+  showLabels,
+  isAnimating
 }: {
   zoomLevel: number
   gesture: GestureState
@@ -301,6 +584,7 @@ function LabScene({
   explodeFactor: number
   shellMode: 'solid' | 'transparent' | 'hidden'
   showLabels: boolean
+  isAnimating: boolean
 }) {
   const group = useRef<Group>(null)
 
@@ -319,10 +603,41 @@ function LabScene({
 
   return (
     <>
-      <ambientLight intensity={0.25} />
-      <directionalLight position={[5, 8, 5]} intensity={1.5} castShadow />
-      <pointLight position={[-4, 3, 4]} intensity={1.5} color="#00e5f0" />
-      <spotLight position={[0, 10, 0]} intensity={1.2} angle={0.6} penumbra={0.8} />
+      {/* === PHOTOREALISTIC LIGHTING SETUP === */}
+      {/* Subtle ambient fill so nothing is pure black */}
+      <ambientLight intensity={0.08} />
+
+      {/* Key light: warm directional from upper-right */}
+      <directionalLight
+        position={[6, 10, 5]}
+        intensity={2.2}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0001}
+        color="#fff5e6"
+      />
+
+      {/* Fill light: cool blue from the left to create depth */}
+      <directionalLight position={[-5, 4, -3]} intensity={0.6} color="#a0c4ff" />
+
+      {/* Rim/accent light: cyan edge highlight from behind */}
+      <pointLight position={[-3, 2, -5]} intensity={1.0} color="#00e5f0" distance={20} decay={2} />
+
+      {/* Top spotlight for specular highlights on metal */}
+      <spotLight
+        position={[0, 12, 0]}
+        intensity={1.5}
+        angle={0.5}
+        penumbra={1}
+        castShadow
+        shadow-bias={-0.0002}
+        color="#ffffff"
+      />
+
+      {/* Bottom subtle bounce */}
+      <pointLight position={[0, -3, 0]} intensity={0.3} color="#2d4a5e" distance={10} decay={2} />
+
       <group ref={group}>
         {activeObject ? (
           activeObject.components.map((component) => (
@@ -334,26 +649,84 @@ function LabScene({
               explodeFactor={explodeFactor}
               shellMode={shellMode}
               showLabels={showLabels}
+              isAnimating={isAnimating}
             />
           ))
         ) : (
           <>
             <mesh position={[0, 0, 0]}>
               <boxGeometry args={[1.25, 1.25, 1.25]} />
-              <meshStandardMaterial color="#556270" roughness={0.2} metalness={0.8} />
+              <meshPhysicalMaterial
+                color="#556270"
+                roughness={0.12}
+                metalness={0.92}
+                clearcoat={0.6}
+                clearcoatRoughness={0.05}
+                envMapIntensity={2.0}
+              />
             </mesh>
-            <Sphere args={[0.44, 48, 48]} position={[-1.25, -0.28, 0]}>
-              <MeshDistortMaterial color="#dfe6e9" distort={0.09} speed={1.1} roughness={0.1} metalness={0.9} />
+            <Sphere args={[0.44, 64, 64]} position={[-1.25, -0.28, 0]}>
+              <meshPhysicalMaterial
+                color="#dfe6e9"
+                roughness={0.05}
+                metalness={0.95}
+                clearcoat={1.0}
+                clearcoatRoughness={0.02}
+                envMapIntensity={2.5}
+              />
             </Sphere>
-            <Sphere args={[0.44, 48, 48]} position={[1.25, -0.28, 0]}>
-              <MeshDistortMaterial color="#2f3640" distort={0.09} speed={1.1} roughness={0.3} metalness={0.8} />
+            <Sphere args={[0.44, 64, 64]} position={[1.25, -0.28, 0]}>
+              <meshPhysicalMaterial
+                color="#2f3640"
+                roughness={0.2}
+                metalness={0.88}
+                clearcoat={0.5}
+                clearcoatRoughness={0.08}
+                envMapIntensity={1.8}
+              />
             </Sphere>
           </>
         )}
       </group>
-      <Environment preset="studio" />
-      <ContactShadows position={[0, -1.2, 0]} opacity={0.75} scale={10} blur={2.5} far={2} />
-      <gridHelper args={[20, 20, '#00e5f0', '#2d3748']} position={[0, -1.2, 0]} />
+
+      {/* === HDRI ENVIRONMENT for realistic reflections === */}
+      <Environment preset="city" background backgroundBlurriness={0.8} />
+
+      {/* === GROUND SHADOWS === */}
+      <ContactShadows
+        position={[0, -1.2, 0]}
+        opacity={0.6}
+        scale={12}
+        blur={3}
+        far={3}
+        resolution={512}
+        color="#0a1520"
+      />
+
+      {/* Subtle grid */}
+      <gridHelper args={[20, 20, '#00e5f0', '#1a2a3a']} position={[0, -1.2, 0]} />
+
+      {/* === POST-PROCESSING === */}
+      <EffectComposer multisampling={4}>
+        {/* Ambient Occlusion: dark crevices & corners like real life */}
+        <N8AO
+          aoRadius={0.8}
+          intensity={2.5}
+          distanceFalloff={0.5}
+        />
+        {/* Bloom: natural glow on bright metallic highlights */}
+        <Bloom
+          luminanceThreshold={0.7}
+          luminanceSmoothing={0.3}
+          intensity={0.4}
+          mipmapBlur
+        />
+        {/* Vignette: subtle darkened edges like a real camera lens */}
+        <Vignette offset={0.3} darkness={0.6} />
+        {/* Tone Mapping: cinematic color grading */}
+        <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+      </EffectComposer>
+
       <OrbitControls enableDamping dampingFactor={0.08} minDistance={0.05} maxDistance={30.0} />
     </>
   )
@@ -534,7 +907,9 @@ function ResearchScreen({
   shellMode,
   setShellMode,
   showLabels,
-  setShowLabels
+  setShowLabels,
+  isAnimating,
+  setIsAnimating
 }: {
   query: string
   setQuery: (value: string) => void
@@ -558,6 +933,8 @@ function ResearchScreen({
   setShellMode: (value: 'solid' | 'transparent' | 'hidden') => void
   showLabels: boolean
   setShowLabels: (value: boolean) => void
+  isAnimating: boolean
+  setIsAnimating: (value: boolean) => void
 }) {
   return (
     <main className="research-screen">
@@ -589,17 +966,25 @@ function ResearchScreen({
           )}
         </ul>
         <div className="scene-shell" style={{ position: 'relative' }}>
-          <Canvas>
-            <LabScene
-              zoomLevel={zoomLevel}
-              gesture={gesture}
-              activeObject={activeObject}
-              selectedComponent={selectedComponent}
-              onSelectComponent={onSelectComponent}
-              explodeFactor={explodeFactor}
-              shellMode={shellMode}
-              showLabels={showLabels}
-            />
+          <Canvas
+            shadows
+            dpr={[1, 2]}
+            camera={{ position: [4, 3, 6], fov: 45, near: 0.01, far: 100 }}
+            gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+          >
+            <Suspense fallback={<Html center>Loading 3D...</Html>}>
+              <LabScene
+                zoomLevel={zoomLevel}
+                gesture={gesture}
+                activeObject={activeObject}
+                selectedComponent={selectedComponent}
+                onSelectComponent={onSelectComponent}
+                explodeFactor={explodeFactor}
+                shellMode={shellMode}
+                showLabels={showLabels}
+                isAnimating={isAnimating}
+              />
+            </Suspense>
           </Canvas>
           <div className="viewport-controls-overlay">
             <div className="control-group">
@@ -654,6 +1039,16 @@ function ResearchScreen({
                 />
                 <span className="control-val">{zoomLevel}x</span>
               </div>
+            </div>
+
+            <div className="control-group inline">
+              <label>Animation</label>
+              <button
+                className={`toggle-switch ${isAnimating ? 'active' : ''}`}
+                onClick={() => setIsAnimating(!isAnimating)}
+              >
+                {isAnimating ? 'ON' : 'OFF'}
+              </button>
             </div>
 
             <div className="control-group inline">
@@ -723,6 +1118,7 @@ function App() {
   const [explodeFactor, setExplodeFactor] = useState(0.0)
   const [shellMode, setShellMode] = useState<'solid' | 'transparent' | 'hidden'>('solid')
   const [showLabels, setShowLabels] = useState(true)
+  const [isAnimating, setIsAnimating] = useState(true)
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -770,217 +1166,258 @@ function App() {
       setSelectedComponent(objectData.components?.[0] || null)
       setActiveTab('research')
       speak(`Loaded ${objectData.name}. Select a component or ask ARIA what it does.`)
-    } catch {
-      const fallback: ExplorableObject = {
-        id: 'car_engine',
-        name: 'Inline-4 Car Engine',
-        type: 'mechanical_system',
-        summary: 'Offline high-fidelity inline-4 engine representation with realistic PBR styling.',
-        defaultView: 'assembled',
-        model: { kind: 'procedural', assetUrl: null },
-        components: [
+    } catch (_e) {
+      // Smart dynamic fallback: fetch Wikipedia info and build a unique procedural model
+      let wikiTitle = searchText
+      let wikiDesc = `A procedurally generated 3D model of ${searchText}.`
+
+      try {
+        const encoded = encodeURIComponent(searchText.replace(/ /g, '_'))
+        const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encoded}`)
+        if (wikiRes.ok) {
+          const wikiData = await wikiRes.json()
+          wikiTitle = wikiData.title || searchText
+          wikiDesc = wikiData.description || wikiData.extract?.slice(0, 160) || wikiDesc
+        } else {
+          const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchText)}&format=json&origin=*&utf8=`)
+          if (searchRes.ok) {
+            const searchData = await searchRes.json()
+            const top = searchData?.query?.search?.[0]
+            if (top?.title) { wikiTitle = top.title; wikiDesc = top.snippet?.replace(/<[^>]+>/g, '') || wikiDesc }
+          }
+        }
+      } catch (_e) { /* Wikipedia fetch failed - use generic */ }
+
+      const q = searchText.toLowerCase()
+      const isJetEngine = (q.includes('airplane') || q.includes('aircraft') || q.includes('jet') || q.includes('turbine')) && q.includes('engine')
+      const isCarEngine = q.includes('car') && q.includes('engine') && !isJetEngine
+      const isMicroscope = q.includes('microscope')
+      const isRocket = q.includes('rocket') || q.includes('missile')
+      const isDrone = q.includes('drone') || q.includes('quadcopter')
+
+      let rootColor = '#4a4e69', rootSize: [number,number,number] = [1.8, 0.8, 1.2]
+      let p1N = 'Primary Module', p1C = '#c0c5ce', p1G: Record<string,unknown> = { type: 'cylinder', radius: 0.3, depth: 0.6 }, p1P: [number,number,number] = [0, 0.6, 0]
+      let p2N = 'Secondary Module', p2C = '#b87333', p2G: Record<string,unknown> = { type: 'sphere', radius: 0.22 }, p2P: [number,number,number] = [0.8, 0, 0]
+      let p3N = 'Support Base', p3G: Record<string,unknown> = { type: 'box', size: [1.4, 0.15, 1.0] }, p3P: [number,number,number] = [0, -0.5, 0]
+
+      if (isJetEngine) {
+        rootColor = '#3d3d3d'; rootSize = [0.85, 0.85, 2.2]
+        p1N = 'Turbofan Blades'; p1G = { type: 'fan', radius: 0.78, blades: 18, rotation: [1.57,0,0] }; p1P = [0,0,1.2]; p1C = '#c0c5ce'
+        p2N = 'Combustion Chamber'; p2G = { type: 'cylinder', radius: 0.38, depth: 1.0, rotation: [1.57,0,0] }; p2P = [0,0,0]; p2C = '#b87333'
+        p3N = 'Exhaust Nozzle'; p3G = { type: 'cone', radius: 0.42, depth: 0.7 }; p3P = [0,0,-1.3]
+      } else if (isCarEngine) {
+        rootColor = '#3d3d3d'; rootSize = [1.5, 0.7, 0.9]
+        p1N = 'Cylinder Head'; p1G = { type: 'box', size: [1.5, 0.18, 0.85] }; p1P = [0,0.44,0]; p1C = '#c0c5ce'
+        p2N = 'Crankshaft'; p2G = { type: 'cylinder', radius: 0.06, depth: 1.4 }; p2P = [0,-0.15,0]; p2C = '#71797e'
+        p3N = 'Oil Pan'; p3G = { type: 'box', size: [1.4, 0.18, 0.85] }; p3P = [0,-0.44,0]
+      } else if (isMicroscope) {
+        rootColor = '#2c3e50'; rootSize = [0.4, 0.8, 0.5]
+        p1N = 'Eyepiece Lens'; p1G = { type: 'cylinder', radius: 0.14, depth: 0.35 }; p1P = [0,1.1,0.1]; p1C = '#d4f1f9'
+        p2N = 'Objective Lens'; p2G = { type: 'cylinder', radius: 0.1, depth: 0.3 }; p2P = [0,0.1,0.3]; p2C = '#b87333'
+        p3N = 'Stage'; p3G = { type: 'box', size: [0.6, 0.05, 0.6] }; p3P = [0,0,0]
+      } else if (isRocket) {
+        rootColor = '#c0c5ce'; rootSize = [0.5, 2.5, 0.5]
+        p1N = 'Nose Cone'; p1G = { type: 'cone', radius: 0.25, depth: 0.7 }; p1P = [0,1.6,0]; p1C = '#e8e8e8'
+        p2N = 'Rocket Nozzle'; p2G = { type: 'cone', radius: 0.3, depth: 0.5 }; p2P = [0,-1.5,0]; p2C = '#b87333'
+        p3N = 'Fin Assembly'; p3G = { type: 'box', size: [0.8, 0.5, 0.05] }; p3P = [0,-1.2,0.3]
+      } else if (isDrone) {
+        rootColor = '#2c2f33'; rootSize = [1.4, 0.12, 1.4]
+        p1N = 'Front Motor'; p1G = { type: 'cylinder', radius: 0.08, depth: 0.22 }; p1P = [-0.7,0.15,0.7]; p1C = '#1a1a1a'
+        p2N = 'Propeller'; p2G = { type: 'fan', radius: 0.35, blades: 2 }; p2P = [-0.7,0.28,0.7]; p2C = '#c0c5ce'
+        p3N = 'Flight Controller'; p3G = { type: 'box', size: [0.3, 0.04, 0.3] }; p3P = [0,0.06,0]
+      }
+
+      const oid = searchText.toLowerCase().replace(/[^a-z0-9]+/g, '_')
+      let fallbackComponents: ExplorableObject['components'] = []
+
+      if (isJetEngine) {
+        fallbackComponents = [
           {
-            id: 'engine_block',
-            name: 'Engine Block',
+            id: `${oid}_central_shaft`,
+            name: "Central Shaft",
             parentId: null,
-            scaleLevel: 'component',
-            function: 'Central structural block housing cylinders, cooling channels, and crankshaft support.',
-            material: 'Cast Iron',
-            riskIfRemoved: 'Engine structure collapses; no housing for cylinders or oil flow.',
+            scaleLevel: "component",
+            function: "Central main shaft transmitting rotational torque from the turbines at the back to the fan and compressors at the front.",
+            material: "Titanium Alloy",
+            riskIfRemoved: "Total mechanical lock; compressor/fan cannot spin, leading to zero thrust and engine seizure.",
             position: [0, 0, 0],
-            color: '#556270',
-            geometry: { type: 'box', size: [2.2, 0.8, 1.0] },
-            children: ['cylinder_head', 'oil_pan', 'crankshaft', 'piston_1', 'piston_2', 'piston_3', 'piston_4', 'cooling_fan'],
+            color: "#7f8c8d",
+            geometry: { type: "cylinder", radius: 0.15, depth: 3.6, rotation: [0, 0, 1.5708] } as any,
+            children: [`${oid}_intake_fan`, `${oid}_lp_compressor`, `${oid}_hp_compressor`, `${oid}_combustion_chamber`, `${oid}_hp_turbine`, `${oid}_lp_turbine`, `${oid}_exhaust_cone`, `${oid}_fan_casing`, `${oid}_engine_stand`],
             microLevels: []
           },
           {
-            id: 'cylinder_head',
-            name: 'Cylinder Head',
-            parentId: 'engine_block',
-            scaleLevel: 'subcomponent',
-            function: 'Closes the top of the cylinders to form combustion chambers and houses valves.',
-            material: 'Aluminum Alloy',
-            riskIfRemoved: 'Loss of compression; combustion cannot occur.',
-            position: [0, 0.5, 0],
-            color: '#778899',
-            geometry: { type: 'box', size: [2.2, 0.2, 0.9] },
+            id: `${oid}_intake_fan`,
+            name: "Titanium Intake Fan",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "Large front fan drawing in massive volumes of air, providing the bulk of thrust through the bypass duct.",
+            material: "Titanium Alloy",
+            riskIfRemoved: "Total loss of bypass thrust (80%+ of engine power) and no airflow to core.",
+            position: [-1.7, 0, 0],
+            color: "#00b0ff",
+            geometry: { type: "fan", radius: 1.4, blades: 24, rotation: [0, 0, 1.5708] } as any,
+            children: [`${oid}_nose_cone`],
+            microLevels: []
+          },
+          {
+            id: `${oid}_nose_cone`,
+            name: "Nose Cone Spinner",
+            parentId: `${oid}_intake_fan`,
+            scaleLevel: "subcomponent",
+            function: "Aerodynamic nose cone that diverts incoming air smoothly into the fan and compressor, and sheds ice.",
+            material: "Composite Materials",
+            riskIfRemoved: "Extreme aerodynamic drag, ice accumulation, and air turbulence leading to engine surge.",
+            position: [-1.85, 0, 0],
+            color: "#1a1a1a",
+            geometry: { type: "cone", radius: 0.35, depth: 0.6, rotation: [0, 0, -1.5708] } as any,
             children: [],
             microLevels: []
           },
           {
-            id: 'oil_pan',
-            name: 'Oil Pan',
-            parentId: 'engine_block',
-            scaleLevel: 'subcomponent',
-            function: 'Reservoir for engine oil and collects lubricating fluid under the block.',
-            material: 'Pressed Steel',
-            riskIfRemoved: 'Oil leaks immediately, causing severe engine seizure due to lack of lubrication.',
-            position: [0, -0.5, 0],
-            color: '#2c3e50',
-            geometry: { type: 'box', size: [2.0, 0.2, 0.8] },
+            id: `${oid}_lp_compressor`,
+            name: "Low-Pressure Compressor",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "First compression stage raising air pressure and temperature before it enters the high-pressure section.",
+            material: "Titanium",
+            riskIfRemoved: "Loss of initial compression, leading to immediate stall and engine failure.",
+            position: [-1.0, 0, 0],
+            color: "#2ecc71",
+            geometry: { type: "cylinder", radius: 0.8, depth: 0.6, rotation: [0, 0, 1.5708] } as any,
             children: [],
             microLevels: []
           },
           {
-            id: 'crankshaft',
-            name: 'Crankshaft',
-            parentId: 'engine_block',
-            scaleLevel: 'subcomponent',
-            function: 'Converts linear piston motion into rotational force for the drivetrain.',
-            material: 'Forged Steel',
-            riskIfRemoved: 'Linear piston energy cannot be converted to mechanical drive.',
-            position: [0, -0.3, 0],
-            color: '#a8b2c1',
-            geometry: { type: 'cylinder', radius: 0.1, depth: 2.2, rotation: [0, 0, 1.57] },
-            children: ['flywheel'],
-            microLevels: []
-          },
-          {
-            id: 'flywheel',
-            name: 'Flywheel',
-            parentId: 'crankshaft',
-            scaleLevel: 'subcomponent',
-            function: 'Heavy disk storing rotational inertia to smooth out engine cycles.',
-            material: 'Cast Iron',
-            riskIfRemoved: 'Severe engine vibration and stalling between power strokes.',
-            position: [1.15, -0.3, 0],
-            color: '#34495e',
-            geometry: { type: 'cylinder', radius: 0.45, depth: 0.1, rotation: [0, 0, 1.57] },
+            id: `${oid}_hp_compressor`,
+            name: "High-Pressure Compressor",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "Final compressor stage compressing air to extremely high pressure before combustion.",
+            material: "Nickel Alloy",
+            riskIfRemoved: "Engine cannot maintain self-sustaining combustion due to lack of compression.",
+            position: [-0.4, 0, 0],
+            color: "#8eff1e",
+            geometry: { type: "cylinder", radius: 0.65, depth: 0.6, rotation: [0, 0, 1.5708] } as any,
             children: [],
             microLevels: []
           },
           {
-            id: 'piston_1',
-            name: 'Piston 1',
-            parentId: 'engine_block',
-            scaleLevel: 'subcomponent',
-            function: 'Reciprocating piston that compresses air-fuel mixture and transmits combustion pressure.',
-            material: 'Aluminum Alloy',
-            riskIfRemoved: 'Cylinder 1 loses power and creates severe balance issues.',
-            position: [-0.75, 0.1, 0.0],
-            color: '#dfe6e9',
-            geometry: { type: 'cylinder', radius: 0.22, depth: 0.35 },
-            children: ['connecting_rod_1'],
-            microLevels: []
-          },
-          {
-            id: 'connecting_rod_1',
-            name: 'Connecting Rod 1',
-            parentId: 'piston_1',
-            scaleLevel: 'subcomponent',
-            function: 'Connects piston 1 to the crankshaft, translating linear motion.',
-            material: 'Forged Steel',
-            riskIfRemoved: 'Piston 1 motion is disconnected from the crankshaft.',
-            position: [-0.75, -0.15, 0.0],
-            color: '#7f8c8d',
-            geometry: { type: 'cylinder', radius: 0.05, depth: 0.3 },
+            id: `${oid}_combustion_chamber`,
+            name: "Combustion Chamber",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "Area where fuel is injected, mixed with compressed air, and ignited to create hot, high-velocity gas.",
+            material: "Ceramic Matrix Composite",
+            riskIfRemoved: "No combustion possible; engine produces zero energy and stops.",
+            position: [0.2, 0, 0],
+            color: "#e67e22",
+            geometry: { type: "cylinder", radius: 0.7, depth: 0.6, rotation: [0, 0, 1.5708] } as any,
             children: [],
             microLevels: []
           },
           {
-            id: 'piston_2',
-            name: 'Piston 2',
-            parentId: 'engine_block',
-            scaleLevel: 'subcomponent',
-            function: 'Reciprocating piston that compresses air-fuel mixture and transmits combustion pressure.',
-            material: 'Aluminum Alloy',
-            riskIfRemoved: 'Cylinder 2 loses power.',
-            position: [-0.25, 0.1, 0.0],
-            color: '#dfe6e9',
-            geometry: { type: 'cylinder', radius: 0.22, depth: 0.35 },
-            children: ['connecting_rod_2'],
-            microLevels: []
-          },
-          {
-            id: 'connecting_rod_2',
-            name: 'Connecting Rod 2',
-            parentId: 'piston_2',
-            scaleLevel: 'subcomponent',
-            function: 'Connects piston 2 to the crankshaft, translating linear motion.',
-            material: 'Forged Steel',
-            riskIfRemoved: 'Piston 2 motion is disconnected.',
-            position: [-0.25, -0.15, 0.0],
-            color: '#7f8c8d',
-            geometry: { type: 'cylinder', radius: 0.05, depth: 0.3 },
+            id: `${oid}_hp_turbine`,
+            name: "High-Pressure Turbine",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "Extracts energy from hot gas flow to drive the high-pressure compressor stage via outer shaft.",
+            material: "Single-Crystal Nickel Superalloy",
+            riskIfRemoved: "High-pressure compressor stops rotating; engine ceases operation immediately.",
+            position: [0.8, 0, 0],
+            color: "#f1c40f",
+            geometry: { type: "cylinder", radius: 0.75, depth: 0.4, rotation: [0, 0, 1.5708] } as any,
             children: [],
             microLevels: []
           },
           {
-            id: 'piston_3',
-            name: 'Piston 3',
-            parentId: 'engine_block',
-            scaleLevel: 'subcomponent',
-            function: 'Reciprocating piston that compresses air-fuel mixture and transmits combustion pressure.',
-            material: 'Aluminum Alloy',
-            riskIfRemoved: 'Cylinder 3 loses power.',
-            position: [0.25, 0.1, 0.0],
-            color: '#dfe6e9',
-            geometry: { type: 'cylinder', radius: 0.22, depth: 0.35 },
-            children: ['connecting_rod_3'],
-            microLevels: []
-          },
-          {
-            id: 'connecting_rod_3',
-            name: 'Connecting Rod 3',
-            parentId: 'piston_3',
-            scaleLevel: 'subcomponent',
-            function: 'Connects piston 3 to the crankshaft, translating linear motion.',
-            material: 'Forged Steel',
-            riskIfRemoved: 'Piston 3 motion is disconnected.',
-            position: [0.25, -0.15, 0.0],
-            color: '#7f8c8d',
-            geometry: { type: 'cylinder', radius: 0.05, depth: 0.3 },
+            id: `${oid}_lp_turbine`,
+            name: "Low-Pressure Turbine",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "Extracts remaining gas energy to drive the main intake fan and low-pressure compressor.",
+            material: "Nickel Alloy",
+            riskIfRemoved: "Intake fan stops spinning; engine loses virtually all thrust.",
+            position: [1.3, 0, 0],
+            color: "#e74c3c",
+            geometry: { type: "cylinder", radius: 0.85, depth: 0.5, rotation: [0, 0, 1.5708] } as any,
             children: [],
             microLevels: []
           },
           {
-            id: 'piston_4',
-            name: 'Piston 4',
-            parentId: 'engine_block',
-            scaleLevel: 'subcomponent',
-            function: 'Reciprocating piston that compresses air-fuel mixture and transmits combustion pressure.',
-            material: 'Aluminum Alloy',
-            riskIfRemoved: 'Cylinder 4 loses power.',
-            position: [0.75, 0.1, 0.0],
-            color: '#dfe6e9',
-            geometry: { type: 'cylinder', radius: 0.22, depth: 0.35 },
-            children: ['connecting_rod_4'],
-            microLevels: []
-          },
-          {
-            id: 'connecting_rod_4',
-            name: 'Connecting Rod 4',
-            parentId: 'piston_4',
-            scaleLevel: 'subcomponent',
-            function: 'Connects piston 4 to the crankshaft, translating linear motion.',
-            material: 'Forged Steel',
-            riskIfRemoved: 'Piston 4 motion is disconnected.',
-            position: [0.75, -0.15, 0.0],
-            color: '#7f8c8d',
-            geometry: { type: 'cylinder', radius: 0.05, depth: 0.3 },
+            id: `${oid}_exhaust_cone`,
+            name: "Exhaust Nozzle Cone",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "Channels exhaust gas flow to maximize velocity and direct the thrust vector.",
+            material: "Inconel Alloy",
+            riskIfRemoved: "Thrust efficiency drops dramatically; exhaust gases disperse unevenly.",
+            position: [1.75, 0, 0],
+            color: "#d35400",
+            geometry: { type: "cone", radius: 0.4, depth: 0.6, rotation: [0, 0, 1.5708] } as any,
             children: [],
             microLevels: []
           },
           {
-            id: 'cooling_fan',
-            name: 'Cooling Fan',
-            parentId: 'engine_block',
-            scaleLevel: 'subcomponent',
-            function: 'Pulls cooling air through radiator to prevent overheating.',
-            material: 'Composite Polymer',
-            riskIfRemoved: 'Engine runs hot under load, high thermal seizure risk.',
-            position: [-1.25, 0.0, 0.0],
-            color: '#2f3640',
-            geometry: { type: 'fan', radius: 0.5, blades: 6, rotation: [0, 0, 1.57] },
+            id: `${oid}_fan_casing`,
+            name: "Outer Fan Casing",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "Surrounds fan blades to contain blade fragments in case of failure and duct incoming air.",
+            material: "Kevlar & Aluminum",
+            riskIfRemoved: "Critical safety risk: fan blade out event would destroy the aircraft wing/fuselage.",
+            position: [-1.2, 0, 0],
+            color: "#3f51b5",
+            geometry: { type: "torus", radius: 1.45, tube: 0.08, rotation: [0, 0, 1.5708] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_engine_stand`,
+            name: "Structural Display Stand",
+            parentId: `${oid}_central_shaft`,
+            scaleLevel: "subcomponent",
+            function: "Heavy display stand supporting the engine assembly for research and presentation.",
+            material: "Structural Steel",
+            riskIfRemoved: "Engine falls to the ground; cannot be operated or inspected.",
+            position: [0, -1.2, 0],
+            color: "#7f8c8d",
+            geometry: { type: "box", size: [2.4, 0.2, 1.2] } as any,
             children: [],
             microLevels: []
           }
         ]
+      } else {
+        fallbackComponents = [
+          { id: `${oid}_body`, name: `${wikiTitle} Body`, parentId: null, scaleLevel: 'component',
+            function: `Main structural body of the ${wikiTitle}.`, material: 'Alloy',
+            riskIfRemoved: 'Complete structural failure.', position: [0,0,0], color: rootColor,
+            geometry: { type: 'box', size: rootSize } as ExplorableObject['components'][0]['geometry'],
+            children: [`${oid}_p1`,`${oid}_p2`,`${oid}_p3`], microLevels: [] },
+          { id: `${oid}_p1`, name: p1N, parentId: `${oid}_body`, scaleLevel: 'subcomponent',
+            function: `Primary component of the ${wikiTitle}.`, material: 'Aluminum',
+            riskIfRemoved: 'Primary function fails.', position: p1P, color: p1C,
+            geometry: p1G as ExplorableObject['components'][0]['geometry'], children: [], microLevels: [] },
+          { id: `${oid}_p2`, name: p2N, parentId: `${oid}_body`, scaleLevel: 'subcomponent',
+            function: `Secondary component of the ${wikiTitle}.`, material: 'Steel',
+            riskIfRemoved: 'Secondary function lost.', position: p2P, color: p2C,
+            geometry: p2G as ExplorableObject['components'][0]['geometry'], children: [], microLevels: [] },
+          { id: `${oid}_p3`, name: p3N, parentId: `${oid}_body`, scaleLevel: 'subcomponent',
+            function: `Support structure for the ${wikiTitle}.`, material: 'Cast Iron',
+            riskIfRemoved: 'Loses structural support.', position: p3P, color: '#4a4a4f',
+            geometry: p3G as ExplorableObject['components'][0]['geometry'], children: [], microLevels: [] }
+        ]
+      }
+
+      const fallback: ExplorableObject = {
+        id: oid, name: wikiTitle, type: 'mechanical_system', summary: wikiDesc,
+        defaultView: 'assembled', model: { kind: 'procedural', assetUrl: null },
+        components: fallbackComponents
       }
       setActiveObject(fallback)
       setSelectedComponent(fallback.components[0])
       setActiveTab('research')
-      speak('Backend offline. Loaded local car engine demo.')
+      speak(`Loaded offline model for ${wikiTitle}. Reconnect backend for full AI-generated details.`)
     }
   }, [query, speak])
 
@@ -1048,7 +1485,7 @@ function App() {
       const data = await response.json()
       const reply = data?.result?.unified_response || data?.result?.message || `Command accepted: ${command}`
       speak(String(reply).slice(0, 260))
-    } catch {
+    } catch (_e) {
       speak(`ARIA local mode: ${command}. I updated the lab view and kept the command in session memory.`)
     }
   }, [activeObject?.name, query, searchObject, selectedComponent, speak])
@@ -1174,7 +1611,7 @@ function App() {
         if (handsRef.current) requestAnimationFrame(loop)
       }
       requestAnimationFrame(loop)
-    } catch {
+    } catch (_e) {
       setGesture('offline')
       setAriaReply('Camera permission failed. Allow webcam access to use hand commands.')
     }
@@ -1216,6 +1653,8 @@ function App() {
         setShellMode={setShellMode}
         showLabels={showLabels}
         setShowLabels={setShowLabels}
+        isAnimating={isAnimating}
+        setIsAnimating={setIsAnimating}
       />
     ),
     results: <ResultsScreen />
