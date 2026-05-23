@@ -46,7 +46,7 @@ def test_fallback_presets():
     # Engine
     engine = agent.generate_fallback_object("car engine")
     assert engine.id == "car_engine"
-    assert len(engine.components) == 14  # Engine block, head, oil pan, crankshaft, flywheel, 4 pistons, 4 rods, fan
+    assert len(engine.components) == 27  # Exhaustive components preset
     
     # Microscope
     scope = agent.generate_fallback_object("microscope")

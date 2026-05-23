@@ -63,3 +63,6 @@ ssl/
 tmp/
 temp/
 *.tmp
+
+# EUREKA custom generated cache files
+eureka-backend/app/data/generated_cache/

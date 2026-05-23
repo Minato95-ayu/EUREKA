@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Sphere, MeshDistortMaterial, Html, Edges, Environment, ContactShadows, useGLTF, Stage, RoundedBox, Cylinder, Capsule, Cone, Torus } from '@react-three/drei'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { OrbitControls, Sphere, Html, Edges, Environment, ContactShadows, useGLTF, RoundedBox } from '@react-three/drei'
 import { EffectComposer, Bloom, N8AO, Vignette, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import { Geometry, Base, Subtraction } from '@react-three/csg'
@@ -317,12 +317,11 @@ function ComponentMesh({
   }
 
   const edgeColor = selected ? '#00ffff' : '#2b6cb0'
-  const edgeThickness = selected ? 2 : 1
 
   const groupRef = useRef<THREE.Group>(null)
   const timeRef = useRef(0)
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (!groupRef.current) return
     if (isAnimating) {
       timeRef.current += delta
@@ -382,7 +381,7 @@ function ComponentMesh({
           ))}
         </Geometry>
         {material}
-        <Edges color={edgeColor} thickness={edgeThickness} />
+        <Edges color={edgeColor} />
         {showLabels && (
           <Html position={[0, (geometry.base?.size?.[1] || geometry.base?.depth || 0.6) / 2 + 0.15, 0]} center>
             <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
@@ -398,13 +397,13 @@ function ComponentMesh({
         <mesh castShadow receiveShadow>
           <torusGeometry args={[radius, 0.025, 10, 48]} />
           {material}
-          <Edges color={edgeColor} thickness={edgeThickness} />
+          <Edges color={edgeColor} />
         </mesh>
         {Array.from({ length: blades }).map((_, index) => (
           <mesh key={index} rotation={[0, 0, (Math.PI * 2 * index) / blades]} position={[0, 0, 0.02]} castShadow receiveShadow>
             <boxGeometry args={[radius * 0.9, 0.055, 0.035]} />
             {material}
-            <Edges color={edgeColor} thickness={edgeThickness} />
+            <Edges color={edgeColor} />
           </mesh>
         ))}
         {showLabels && (
@@ -430,7 +429,7 @@ function ComponentMesh({
       <mesh castShadow receiveShadow>
         <sphereGeometry args={[geometry.radius || 0.3, 64, 64]} />
         {material}
-        <Edges color={edgeColor} thickness={edgeThickness} />
+        <Edges color={edgeColor} />
         {showLabels && (
           <Html position={[0, (geometry.radius || 0.3) + 0.15, 0]} center>
             <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
@@ -443,7 +442,7 @@ function ComponentMesh({
       <mesh castShadow receiveShadow>
         <coneGeometry args={[geometry.radius || 0.3, geometry.depth || 0.6, 32]} />
         {material}
-        <Edges color={edgeColor} thickness={edgeThickness} />
+        <Edges color={edgeColor} />
         {showLabels && (
           <Html position={[0, (geometry.depth || 0.6) / 2 + 0.15, 0]} center>
             <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
@@ -456,7 +455,7 @@ function ComponentMesh({
       <mesh castShadow receiveShadow>
         <torusGeometry args={[geometry.radius || 0.4, geometry.tube || 0.08, 24, 48]} />
         {material}
-        <Edges color={edgeColor} thickness={edgeThickness} />
+        <Edges color={edgeColor} />
         {showLabels && (
           <Html position={[0, (geometry.radius || 0.4) + 0.2, 0]} center>
             <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
@@ -516,7 +515,7 @@ function ComponentMesh({
           <cylinderGeometry args={[geometry.radius || 0.2, geometry.radius || 0.2, geometry.depth || 0.6, 32]} />
         )}
         {material}
-        <Edges color={edgeColor} thickness={edgeThickness} />
+        <Edges color={edgeColor} />
         {showLabels && (
           <Html position={[0, geometry.type === 'box' ? (geometry.size?.[1] ? geometry.size[1]/2 + 0.32 : 0.82) : (geometry.depth ? geometry.depth/2 + 0.18 : 0.48), 0]} center>
             <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
