@@ -1,7 +1,7 @@
 # EUREKA: Universal AI-Powered Virtual Research Lab
 
 <p align="center">
-  <img src="docs/assets/eureka_logo.png" alt="EUREKA Logo" width="220px" style="border-radius: 12px; margin-bottom: 20px;" />
+  <img src="docs/assets/eureka_logo.png" alt="EUREKA Logo" width="240px" style="border-radius: 16px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0, 150, 136, 0.3);" />
 </p>
 
 <p align="center">
@@ -22,170 +22,203 @@
   <img src="https://img.shields.io/github/issues/Minato95-ayu/EUREKA?style=flat-square&color=red" alt="Issues" />
 </p>
 
+---
+
+## 📖 Table of Contents
+
+- [💡 Project Overview & Live View](#-project-overview--live-view)
+- [✨ Key Features Breakdown](#-key-features-breakdown)
+- [🧠 ARIA & The Multi-Agent Mesh](#-aria--the-multi-agent-mesh)
+- [🏗️ System Architecture & Workflow](#️-system-architecture--workflow)
+- [📂 Detailed Project Structure](#-detailed-project-structure)
+- [🚀 Quick Start (Docker & Local)](#-quick-start-docker--local)
+- [🛡️ Security & Compliance](#️-security--compliance)
+- [🧪 Automated Test Suite](#-automated-test-suite)
+- [👑 Founder & Developer](#-founder--developer)
+- [📄 License & Citation](#-license--citation)
+
+---
+
+## 💡 Project Overview & Live View
+
+Below is a visualization of the interactive **EUREKA Cyber-Lab Dashboard** in action. Built for modern browsers, the dashboard features a glassmorphic dashboard, real-time particle tracking graphs, active voice/gesture status trackers, and a fully interactive 3D rendering canvas.
+
 <p align="center">
-  <a href="#-concept-to-creation-process">Process View</a> •
-  <a href="#-key-features">Key Features</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-installation--setup">Quick Start</a> •
-  <a href="#-security--compliance">Security</a> •
-  <a href="#-founder--developer">Developer Profile</a>
+  <img src="docs/assets/eureka_dashboard.png" alt="EUREKA Cyber-Lab Dashboard" width="100%" style="border-radius: 12px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.6);" />
 </p>
 
----
+**EUREKA** is an open-source, AI-powered virtual simulation space that bridges physical properties with interactive 3D structures. By feeding **Wikipedia structural summaries** into the **Google Gemini 1.5 Flash API**, EUREKA creates realistic, interactive component-level models of mechanical systems, tools, and molecular shapes. 
 
-## 💡 Concept to Creation Process
-
-Below is a visualization of the interactive **EUREKA Cyber-Lab Dashboard** in action. Designed to run in high-performance dark mode, the interface integrates 3D viewports, gesture camera feeds, multi-agent AI logs, and real-time physical simulation data.
-
-<p align="center">
-  <img src="docs/assets/eureka_dashboard.png" alt="EUREKA Cyber-Lab Dashboard" width="100%" style="border-radius: 8px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
-</p>
-
-**EUREKA** is a state-of-the-art, open-source AI-powered virtual research laboratory. It transforms traditional scientific discovery and education by combining **immersive 3D holographic visualization**, **gesture-based natural interface controls**, **real-time chemical/physical simulators**, and a **Wikipedia-backed multi-agent AI system** led by **ARIA** (AI Research and Innovation Assistant).
-
-Whether you are modeling molecular mechanics, exploring the intricacies of a V8 engine, or mining scientific journals, EUREKA provides a seamless, JARVIS-style environment to search, visualize, simulate, and cite.
+Users can manipulate models using **voice controls** and **hand gestures** via their webcam, run real-time physics collisions, compute chemical properties, and download auto-generated research papers.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features Breakdown
 
-### 🤖 1. Gemini-Driven 3D Object Architect & Research
-*   **Gemini 3D Engine**: Uses `gemini-1.5-flash` to architect complex, hierarchical 3D component trees from scratch based on real-time queries.
-*   **Factual Grounding**: Integrated with the **Wikipedia API** via the `WebResearchService` to ingest real-world structural data, materials, dimensions, and colors prior to 3D generation.
-*   **Dynamic GLTF Support**: Capable of dynamically generating procedural geometry or linking high-fidelity GLTF/GLB models using the custom React Three Fiber `GltfModelWrapper`.
+### 🤖 1. Grounded 3D Generation
+*   **Wikipedia API Context Ingestion**: Pre-fetches dimensions, materials, and colors from Wikipedia REST APIs before passing requests to Gemini to guarantee that generated models correspond to physical reality.
+*   **Gemini 3D Assembly**: Dynamically structures complex system graphs (e.g., piston rods positioned inside cylinders) with customized scales and risk indexes.
+*   **Three.js Custom Wrapper**: Features an advanced wrapper using `@react-three/drei`'s `useGLTF` to dynamically render custom external models alongside procedural geometric components.
 
-### 🔬 2. Immersive 3D Viewport
-*   **Recursive Scale Zoom**: Seamlessly navigate through multiple scales of an object (e.g., *System -> Component -> Sub-component -> Molecule -> Atom*).
-*   **Interactive Controls**: Rendered using **Three.js** & **React Three Fiber** (`@react-three/drei` & `@react-three/fiber`) with real-time lighting, shaders, and shadows.
+### 🖖 2. Natural User Interfaces (NUI)
+*   **MediaPipe Hand Tracking**: Real-time canvas manipulation using webcam frames:
+    *   *Pinch Fingers*: Zoom In / Zoom Out.
+    *   *Clench Fist*: Reset Camera and Positions.
+    *   *Point Index*: Highlight & Inspect Component.
+    *   *Horizontal Swipe*: Switch active tab panel.
+*   **Web Speech API Integration**: Local speech recognition for direct vocal commands (e.g., *"ARIA, analyze the engine block"*) with high-quality synthesized speech replies.
 
-### 🖖 3. Natural User Interfaces (NUI)
-*   **Hand Gesture Recognition**: Built-in camera feed powered by **MediaPipe Hands** to control the laboratory view using intuitive hand gestures (pinch zoom, fist reset, point selection, and swipe navigation).
-*   **Voice Control (JARVIS Mode)**: Hands-free execution of commands (e.g., *"ARIA, simulate combustion"*, *"zoom into piston"*) using the **Web Speech API** for local speech recognition and synthesis.
-
-### 🧪 4. Double-Engine Virtual Simulator
-*   **3D Verlet Physics Engine**: Real-time simulation of Coulomb forces, Van der Waals interactions, and kinetic particle collisions.
-*   **Chemical Intelligence**: Driven by **RDKit** to evaluate molecular attributes, chemical structures, and estimate reaction pathways.
-
-### 📦 5. Autonomous Research Automation
-*   An independent automation layer (`eureka-automation`) running on **Node.js, TypeScript, and BullMQ** to crawl, extract, and index academic publications from **ArXiv** and **PubMed**.
+### 🧪 3. Dual Simulation Engines
+*   **3D Verlet Physics**: Real-time calculation of particle momentum, kinetic energy tracking, Van der Waals force, and electrostatic Coulomb fields.
+*   **RDKit Molecular Engine**: Determines molecular weights, logP partition coefficients, hydrogen bond donors/acceptors, and automatically predicts chemical reaction routes.
 
 ---
 
-## 🏗️ Architecture
+## 🧠 ARIA & The Multi-Agent Mesh
+
+EUREKA coordinates five specialized sub-agents working under **ARIA** to provide comprehensive analysis:
 
 ```
-                                  ┌─────────────────────────────┐
-                                  │      EUREKA Frontend        │
-                                  │   (React 19 + Vite + TS)    │
-                                  └──────────────┬──────────────┘
-                                                 │
-                                     WebSocket / HTTP Requests
-                                                 │
-                                                 ▼
-                                  ┌─────────────────────────────┐
-                                  │       EUREKA Backend        │
-                                  │     (FastAPI + Python)      │
-                                  └──────────────┬──────────────┘
-                                                 │
-                ┌────────────────────────────────┼────────────────────────────────┐
-                ▼                                ▼                                ▼
-   ┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
-   │     AI Agent Mesh       │      │   Simulation Engines    │      │    Knowledge Services   │
-   │ - Explainer             │      │ - Verlet Physics (3D)   │      │ - Wikipedia REST API    │
-   │ - Analyzer              │      │ - RDKit Chemistry       │      │ - Google Gemini API     │
-   │ - Thinker               │      └─────────────────────────┘      │ - Local Ollama Fallback │
-   │ - Helper (Coordinator)  │                                       └─────────────────────────┘
-   └─────────────────────────┘
+                            ┌─────────────────────────────────┐
+                            │    ARIA (Helper Coordinator)    │
+                            └────────────────┬────────────────┘
+                                             │
+                  ┌──────────────────┬───────┴──────────┬──────────────────┐
+                  ▼                  ▼                  ▼                  ▼
+          ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+          │  Explainer   │   │   Analyzer   │   │   Thinker    │   │  Researcher  │
+          │ (Simplicity) │   │ (Statistics) │   │ (What-Ifs)   │   │(Peer Papers) │
+          └──────────────┘   └──────────────┘   └──────────────┘   └──────────────┘
+```
+
+| Agent | Core Objective | Key Output Payload |
+| :--- | :--- | :--- |
+| **🧠 ARIA (Helper)** | Command router & user interface coordinator | Orchestrates task delegation and compiles final conversational output. |
+| **🔬 Explainer** | Deconstructs highly complex engineering & scientific mechanics | Easy-to-read explanations, definitions, and analogies. |
+| **📊 Analyzer** | Computes mathematical properties and handles telemetry | Volumes, mass, materials, structural risks, and coordinate transformations. |
+| **🔮 Thinker** | Simulates hypothetical adjustments (What-if logic) | Failure predictions, structural vulnerabilities, and risk analysis. |
+| **📚 Researcher** | Searches academic paper repositories for grounding data | Extracts and cites DOI references from ArXiv and PubMed. |
+
+---
+
+## 🏗️ System Architecture & Workflow
+
+Below is the execution flow from the moment a user submits a search query to the rendering of the interactive 3D cyber-lab:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Researcher / Student
+    participant FE as EUREKA Frontend (React + R3F)
+    participant BE as EUREKA Backend (FastAPI)
+    participant Wiki as Wikipedia API
+    participant Gemini as Gemini 1.5 Flash
+    
+    User->>FE: Enter Search Query (e.g., "Telescope")
+    FE->>BE: GET /api/objects/generate?q=Telescope
+    Note over BE: Query intercept & WebResearchService check
+    BE->>Wiki: Fetch structural metadata and articles
+    Wiki-->>BE: Return page summaries, image links, & details
+    BE->>Gemini: Request 3D Component Hierarchy JSON (grounded with Wiki context)
+    Note over Gemini: Evaluate positions, scales,<br/>colors, and materials
+    Gemini-->>BE: Return valid ExplorableObject JSON
+    BE-->>FE: Send payload (ExplorableObject)
+    Note over FE: R3F Canvas / GltfModelWrapper parse
+    FE->>FE: Render 3D Model on WebGL viewport
+    User->>FE: Use Hand Gestures (MediaPipe) / Speak (Web Speech)
+    FE->>User: Perform action (Zoom/Analyze) & ARIA replies verbally
 ```
 
 ---
 
-## 📂 Project Structure
+## 📂 Detailed Project Structure
 
 ```bash
 EUREKA/
-├── eureka-backend/             # FastAPI backend application
+├── eureka-backend/             # FastAPI Backend Service (Python 3.11+)
 │   ├── app/
-│   │   ├── agents/             # AI Multi-Agent system (Helper, Explainer, etc.)
-│   │   ├── api/                # API Endpoints (Objects, Auth, WebSockets)
-│   │   ├── services/           # Gemini 3D Engine, Web Research, Chemistry, Physics
+│   │   ├── agents/             # AI agent files (helper.py, explainer.py, thinker.py, etc.)
+│   │   ├── api/                # API controllers (objects.py, ws.py, auth.py)
+│   │   ├── services/           # Core calculations (gemini_3d_service.py, physics_engine.py, rdkit)
 │   │   └── data/               # Procedural templates & demo objects (e.g., car_engine.json)
-│   ├── tests/                  # Pytest unit and integration tests
-│   └── main.py                 # Backend application entrypoint
+│   ├── tests/                  # Backend unit & integration test files
+│   └── main.py                 # Core entry point
 │
-├── eureka-frontend/            # React + TypeScript + Three.js client
+├── eureka-frontend/            # React Client Application (React 19 + TypeScript + Vite)
 │   ├── src/
-│   │   ├── components/         # 3D Viewport, GltfWrapper, UI Controls, Camera Stream
-│   │   ├── pages/              # Cyber-lab dashboards and settings panels
-│   │   └── App.tsx             # Main dashboard shell & gesture mapping loops
+│   │   ├── components/         # Canvas3D.tsx, GltfWrapper.tsx, CameraFeed.tsx, ARIAAssistant.tsx
+│   │   ├── pages/              # CyberDashboard.tsx, Settings.tsx
+│   │   └── App.tsx             # Main router, state machine, and MediaPipe mapping loop
 │   └── package.json
 │
-├── eureka-automation/          # TypeScript background worker & crawler
+├── eureka-automation/          # TypeScript scrapers & background queues
 │   ├── src/
 │   │   ├── scrapers/           # Academic crawling engines (ArXiv, PubMed)
 │   │   └── queue/              # BullMQ message queue setup
 │   └── package.json
 │
-├── kubernetes/                 # K8s manifests for production deployment
-├── helm/                       # Helm packaging for scalable cloud rollouts
-├── monitoring/                 # Prometheus metrics and Grafana alerts
-└── docker-compose.yml          # Consolidated multi-container setup (Backend, Frontend, Redis, DB, Ollama)
+├── kubernetes/                 # Production orchestration manifests
+├── helm/                       # Configurable Helm charts for cloud rollouts
+├── monitoring/                 # Prometheus dashboards and Grafana metrics config
+└── docker-compose.yml          # Container configuration for all services
 ```
 
 ---
 
 ## 🚀 Installation & Setup
 
-### Option 1: Quickstart with Docker Compose (Recommended)
+### Environment Configuration
+Create a `.env` file in the root directory before launching:
+| Parameter | Default Value | Description |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | *Required* | API Key from Google AI Studio. |
+| `DATABASE_URL` | `postgresql://user:pass@db:5432/eureka` | PostgreSQL connection string. |
+| `REDIS_URL` | `redis://redis:6379/0` | Redis cache and queue address. |
+| `OLLAMA_HOST` | `http://ollama:11434` | Endpoint for local model fallbacks. |
 
-To run the complete suite, including database, caching, local models, and analytics dashboards:
+---
+
+### Option 1: Multi-Container Launch via Docker Compose (Recommended)
 
 ```bash
 # Clone the repository
 git clone https://github.com/Minato95-ayu/EUREKA.git
 cd EUREKA
 
-# Configure environment variables
-cp .env.example .env # Add your GEMINI_API_KEY here
-
-# Build and start services
+# Launch all services in background mode
 docker-compose up --build -d
 
-# Pull the default local model for Ollama (optional fallback)
+# Initialize local fallback model (Ollama)
 docker-compose exec ollama ollama pull llama3
 ```
 
-Access the platform:
-*   **Frontend Web Interface**: [http://localhost:3000](http://localhost:3000)
-*   **Interactive API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-*   **Local Ollama Server**: [http://localhost:11434](http://localhost:11434)
+*   **Lab Interface**: [http://localhost:3000](http://localhost:3000)
+*   **FastAPI Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
 ### Option 2: Local Manual Setup (Development Mode)
 
-#### 1. Backend Setup (FastAPI)
+#### 1. Backend Server Setup
+Ensure Python 3.11+ and C++ headers (for RDKit) are configured locally:
 ```bash
 cd eureka-backend
 python -m venv venv
 
-# Activate Virtual Environment
-# On Windows:
+# Activate Environment
+# Windows:
 .\venv\Scripts\activate
-# On Linux/macOS:
+# Linux/macOS:
 source venv/bin/activate
 
-# Install requirements (ensure RDKit-supported python version)
+# Install libraries
 pip install -r requirements.txt
 
-# Export your keys
-export GEMINI_API_KEY="your_api_key_here"  # Windows PowerShell: $env:GEMINI_API_KEY="your_api_key_here"
-
-# Start the application
+# Run server
 python main.py
 ```
 
-#### 2. Frontend Setup (React)
+#### 2. Frontend Client Setup
 ```bash
 cd ../eureka-frontend
 npm install
@@ -196,38 +229,26 @@ npm run dev
 
 ## 🛡️ Security & Compliance
 
-EUREKA is designed with robust security protocols suited for scientific and educational sandbox environments:
+EUREKA follows strict data safety and deployment patterns to protect server resources:
 
-*   **API Security**: Implements granular CORS origin controls, custom secure headers (HSTS, CSP, X-Frame-Options), and client rate-limiting via the `slowapi` middleware.
-*   **Authentication**: Secure token-based user authentication using **JSON Web Tokens (JWT)** with HS256 encryption.
-*   **Access Isolation**: Non-root container privileges configured inside both the frontend and backend Dockerfiles.
-*   **Resource Throttling**: Sandboxed environments prevent heavy model generation or simulation operations from overflowing backend compute cycles.
+*   **DDOS Shield**: Integrated with `slowapi` to limit excessive client calls on computational-heavy 3D generation endpoints.
+*   **Secure Session Sign-In**: Powered by stateless JWT (HS256) keys with automatic 24-hour cookie decay.
+*   **HTTP Strict Transport security**: Nginx configurations enforce TLS 1.3 and block cross-frame scripting (XSS) via customized policy headers.
+*   **Isolation**: Docker runtimes execute frontend/backend processes under non-privileged unprivileged user definitions.
 
 ---
 
-## 🧪 Testing Suite
+## 🧪 Automated Test Suite
 
-EUREKA maintains a rigorous test suite validating the physics simulator, agent coordination, and chemistry calculations.
+We maintain an active unit testing standard across simulation engines and AI routing networks.
 
 ```bash
-# Navigate to the backend directory
+# Go to backend folder
 cd eureka-backend
 
-# Run complete pytest suite with coverage metrics
+# Execute tests with code coverage metrics
 pytest -v --cov=app
 ```
-
----
-
-## 📈 Roadmap
-
-*   [x] **Phase 1**: Cyber-lab 3D dashboard & Three.js canvas integration.
-*   [x] **Phase 2**: MediaPipe hand gestures & Web Speech voice control MVP.
-*   [x] **Phase 3**: Wikipedia-grounded Gemini 3D Object generation.
-*   [x] **Phase 4**: Verlet 3D physics simulator and RDKit-driven chemistry solver.
-*   [ ] **Phase 5**: Full AR/VR support utilizing WebXR devices.
-*   [ ] **Phase 6**: Custom visual physics simulator node editor.
-*   [ ] **Phase 7**: Real-time collaborative shared virtual lab sessions via Redis-backed WebSockets.
 
 ---
 
@@ -236,7 +257,7 @@ pytest -v --cov=app
 <table border="0" cellpadding="10" cellspacing="0">
   <tr>
     <td valign="top" width="180">
-      <img src="docs/assets/ayush_kaushik.jpg" alt="Ayush Kaushik" width="160" style="border-radius: 12px; border: 3px solid #009688; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+      <img src="docs/assets/ayush_kaushik.jpg" alt="Ayush Kaushik" width="160" style="border-radius: 16px; border: 3px solid #009688; box-shadow: 0 8px 16px rgba(0, 150, 136, 0.4);" />
     </td>
     <td valign="top">
       <h3>Ayush Kaushik</h3>
@@ -254,15 +275,11 @@ pytest -v --cov=app
 
 ---
 
-## 📄 License
+## 📄 License & Citation
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
+Distributed under the **MIT License**. See `LICENSE` for details.
 
----
-
-## 📝 Citation
-
-If you use EUREKA in your academic research, please cite our repository:
+If you leverage EUREKA in an academic context, please cite the project:
 
 ```bibtex
 @software{eureka2026,
