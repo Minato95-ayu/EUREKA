@@ -49,12 +49,11 @@ Below is a visualization of the interactive **EUREKA Cyber-Lab Dashboard** in ac
   <img src="docs/assets/eureka_dashboard.png" alt="EUREKA Cyber-Lab Dashboard" width="100%" style="border-radius: 12px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.6);" />
 </p>
 
-<p align="center">
-  <h3>🎥 Interactive Video Demo</h3>
-  <video src="https://raw.githubusercontent.com/Minato95-ayu/EUREKA/main/docs/assets/eureka_demo.mp4" width="100%" controls style="border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></video>
-  <br>
-  <sub><i>Note: To play your own project demo video, record a screen video of the EUREKA dashboard, rename it to <code>eureka_demo.mp4</code>, and save it in the <code>docs/assets/</code> directory (or drag & drop the video directly into the GitHub editor!).</i></sub>
-</p>
+### 🎥 Interactive Video Demo
+
+https://github.com/Minato95-ayu/EUREKA/raw/main/docs/assets/eureka_demo.mp4
+
+*(If the video player does not load automatically in your browser, you can **[Click Here to Watch the Demo Video](https://github.com/Minato95-ayu/EUREKA/raw/main/docs/assets/eureka_demo.mp4)**)*
 
 **EUREKA** is an open-source, AI-powered virtual simulation space that bridges physical properties with interactive 3D structures. By feeding **Wikipedia structural summaries** into the **Google Gemini 1.5 Flash API**, EUREKA creates realistic, interactive component-level models of mechanical systems, tools, and molecular shapes. 
 
