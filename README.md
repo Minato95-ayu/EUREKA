@@ -1,281 +1,259 @@
-# EUREKA: The Universal AI-Powered Virtual Research Lab
+# 🔬 EUREKA: Universal AI-Powered Virtual Research Lab
 
 <p align="center">
-  <strong>🔬 Making scientific discovery accessible to everyone, everywhere, for free. 🚀</strong>
+  <img src="https://raw.githubusercontent.com/Minato95-ayu/EUREKA/main/docs/assets/banner.png" alt="EUREKA Banner" width="100%" style="border-radius: 8px;" />
 </p>
 
 <p align="center">
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-key-features">Features</a> •
+  <img src="https://img.shields.io/badge/Powered%20By-Google%20Gemini%201.5%20Flash-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white" alt="Gemini Powered" />
+  <img src="https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Frontend-React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/3D%20Graphics-Three.js-000000?style=for-the-badge&logo=three.js&logoColor=white" alt="Three.js" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/license/Minato95-ayu/EUREKA?style=flat-square&color=blue" alt="License" />
+  <img src="https://img.shields.io/github/stars/Minato95-ayu/EUREKA?style=flat-square&color=gold" alt="Stars" />
+  <img src="https://img.shields.io/github/forks/Minato95-ayu/EUREKA?style=flat-square&color=lightgrey" alt="Forks" />
+  <img src="https://img.shields.io/github/issues/Minato95-ayu/EUREKA?style=flat-square&color=red" alt="Issues" />
+</p>
+
+<p align="center">
+  <strong>🔬 Making scientific discovery and advanced research accessible to everyone, everywhere, for free. 🚀</strong>
+</p>
+
+<p align="center">
+  <a href="#-key-features">Key Features</a> •
   <a href="#-architecture">Architecture</a> •
-  <a href="#-documentation">Docs</a> •
+  <a href="#-installation--setup">Quick Start</a> •
+  <a href="#-project-structure">Project Structure</a> •
+  <a href="#-roadmap">Roadmap</a> •
   <a href="#-contributing">Contributing</a>
 </p>
 
 ---
 
-EUREKA is a revolutionary, open-source platform that transforms scientific education and research through immersive 3D visualization, gesture-based control, and intelligent AI-powered analysis. Built entirely with free and open-source technologies, EUREKA democratizes access to advanced scientific tools for students, researchers, and educators worldwide.
+**EUREKA** is a state-of-the-art, open-source AI-powered virtual research laboratory. It transforms traditional scientific discovery and education by combining **immersive 3D holographic visualization**, **gesture-based natural interface controls**, **real-time chemical/physical simulators**, and a **Wikipedia-backed multi-agent AI system** led by **ARIA** (AI Research and Innovation Assistant).
 
-## Current Product Direction
+Whether you are modeling molecular mechanics, exploring the intricacies of a V8 engine, or mining scientific journals, EUREKA provides a seamless, JARVIS-style environment to search, visualize, simulate, and cite.
 
-EUREKA is being refocused into a JARVIS-style AI-powered 3D experimental lab with ARIA, the AI Research and Innovation Assistant. The immediate goal is to build a complete interaction loop:
-
-```text
-Search -> visualize -> select -> ask ARIA -> simulate -> explain -> cite
-```
-
-See [docs/JARVIS_VISION.md](docs/JARVIS_VISION.md) for the detailed vision and [PROJECT_STATUS.md](PROJECT_STATUS.md) for the honest current implementation status.
-
-EUREKA also now includes an early automation layer in [eureka-automation/](eureka-automation/) for research scraping, batch experiment orchestration, and ARIA-assisted analysis. See [docs/AUTOMATION_LAYER.md](docs/AUTOMATION_LAYER.md).
+---
 
 ## ✨ Key Features
 
-### 🔬 3D Holographic Visualization
-- Interactive 3D models viewable from any angle
-- Recursive zoom: Explore from atoms → molecules → objects
-- Real-time rendering with Three.js and React Three Fiber
-- Hand gesture-based navigation (MediaPipe)
-- Voice command support
+### 🤖 1. Gemini-Driven 3D Object Architect & Research
+*   **Gemini 3D Engine**: Uses `gemini-1.5-flash` to architect complex, hierarchical 3D component trees from scratch based on real-time queries.
+*   **Factual Grounding**: Integrated with the **Wikipedia API** via the `WebResearchService` to ingest real-world structural data, materials, dimensions, and colors prior to 3D generation.
+*   **Dynamic GLTF Support**: Capable of dynamically generating procedural geometry or linking high-fidelity GLTF/GLB models using the custom React Three Fiber `GltfModelWrapper`.
 
-### 🤖 Multi-Agent AI System
-Five specialized AI agents working together:
-| Agent | Role |
-|-------|------|
-| **Explainer** | Simplifies complex scientific concepts |
-| **Analyzer** | Calculates properties and characteristics |
-| **Thinker** | Predicts outcomes and consequences |
-| **Research Integrator** | Fetches relevant research papers |
-| **Helper** | Master coordinator orchestrating all agents |
+### 🔬 2. Immersive 3D Viewport
+*   **Recursive Scale Zoom**: Seamlessly navigate through multiple scales of an object (e.g., *System -> Component -> Sub-component -> Molecule -> Atom*).
+*   **Interactive Controls**: Rendered using **Three.js** & **React Three Fiber** (`@react-three/drei` & `@react-three/fiber`) with real-time lighting, shaders, and shadows.
 
-### 🧪 Virtual Simulation Engine
-- **Physics**: Coulomb forces, Van der Waals interactions, Verlet integration
-- **Chemistry**: Molecular structure analysis (RDKit), reaction simulation
-- **Real-time**: Watch particles interact live with energy tracking
-- **Trajectory**: Record and replay particle movement history
+### 🖖 3. Natural User Interfaces (NUI)
+*   **Hand Gesture Recognition**: Built-in camera feed powered by **MediaPipe Hands** to control the laboratory view using intuitive hand gestures (pinch zoom, fist reset, point selection, and swipe navigation).
+*   **Voice Control (JARVIS Mode)**: Hands-free execution of commands (e.g., *"ARIA, simulate combustion"*, *"zoom into piston"*) using the **Web Speech API** for local speech recognition and synthesis.
 
-### 📚 Research Integration
-- ArXiv API integration for physics/math papers
-- PubMed API integration for medical/biology papers
-- Semantic search for finding related research
-- Citation management and knowledge graphs
+### 🧪 4. Double-Engine Virtual Simulator
+*   **3D Verlet Physics Engine**: Real-time simulation of Coulomb forces, Van der Waals interactions, and kinetic particle collisions.
+*   **Chemical Intelligence**: Driven by **RDKit** to evaluate molecular attributes, chemical structures, and estimate reaction pathways.
 
-### 🤝 Collaboration Features
-- Multi-user experiments in shared virtual labs
-- Real-time synchronization via WebSocket
-- Role-based access control (Owner, Editor, Viewer)
-- Comments, annotations, and experiment versioning
+### 📦 5. Autonomous Research Automation
+*   An independent automation layer (`eureka-automation`) running on **Node.js, TypeScript, and BullMQ** to crawl, extract, and index academic publications from **ArXiv** and **PubMed**.
 
-### 📊 Advanced Analytics
-- Experiment comparison with t-test/ANOVA statistical analysis
-- Z-score anomaly detection in results
-- Linear regression trend analysis
-- Export in multiple formats (JSON, CSV, PDF)
+---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    EUREKA Platform                       │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │           Frontend (React + Three.js)             │   │
-│  │  - 3D Visualization    - Gesture Recognition      │   │
-│  │  - Voice Control       - Real-time Chat           │   │
-│  └──────────────────────────────────────────────────┘   │
-│                         ↓                               │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │         Backend (FastAPI + Python)                │   │
-│  │  - Multi-Agent AI System  - Simulation Engine     │   │
-│  │  - Research Integration   - WebSocket Server      │   │
-│  └──────────────────────────────────────────────────┘   │
-│                         ↓                               │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │           Services & Infrastructure               │   │
-│  │  - Ollama (Llama 3)   - PostgreSQL                │   │
-│  │  - Redis              - RDKit                     │   │
-│  │  - ArXiv/PubMed APIs  - Prometheus/ELK            │   │
-│  └──────────────────────────────────────────────────┘   │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+                                  ┌─────────────────────────────┐
+                                  │      EUREKA Frontend        │
+                                  │   (React 19 + Vite + TS)    │
+                                  └──────────────┬──────────────┘
+                                                 │
+                                     WebSocket / HTTP Requests
+                                                 │
+                                                 ▼
+                                  ┌─────────────────────────────┐
+                                  │       EUREKA Backend        │
+                                  │     (FastAPI + Python)      │
+                                  └──────────────┬──────────────┘
+                                                 │
+                ┌────────────────────────────────┼────────────────────────────────┐
+                ▼                                ▼                                ▼
+   ┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
+   │     AI Agent Mesh       │      │   Simulation Engines    │      │    Knowledge Services   │
+   │ - Explainer             │      │ - Verlet Physics (3D)   │      │ - Wikipedia REST API    │
+   │ - Analyzer              │      │ - RDKit Chemistry       │      │ - Google Gemini API     │
+   │ - Thinker               │      └─────────────────────────┘      │ - Local Ollama Fallback │
+   │ - Helper (Coordinator)  │                                       └─────────────────────────┘
+   └─────────────────────────┘
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker & Docker Compose (recommended)
-- Or: Python 3.11+, Node.js 22+, PostgreSQL 15+
-
-### Option 1: Docker (Recommended)
-
-```bash
-# Clone repository
-git clone https://github.com/Minato95-ayu/EUREKA.git
-cd EUREKA
-
-# Start all services
-docker-compose up -d
-
-# Pull Ollama model
-docker-compose exec ollama ollama pull llama3
-
-# Access application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000/docs
-# Ollama: http://localhost:11434
-```
-
-### Option 2: Local Development
-
-```bash
-# Backend setup
-cd eureka-backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-
-# Frontend setup (new terminal)
-cd eureka-frontend
-npm install
-npm run dev
-
-# Ollama setup (new terminal)
-ollama pull llama3
-ollama serve
-```
+---
 
 ## 📁 Project Structure
 
-```
-eureka/
-├── eureka-backend/             # FastAPI backend
+```bash
+EUREKA/
+├── eureka-backend/             # FastAPI backend application
 │   ├── app/
-│   │   ├── api/                # API endpoints
-│   │   ├── agents/             # AI agents
-│   │   ├── services/           # Business logic
-│   │   ├── websocket/          # WebSocket handlers
-│   │   ├── security.py         # JWT & rate limiting
-│   │   ├── database.py         # DB connection & migrations
-│   │   └── config.py           # Settings
-│   ├── tests/                  # Backend tests
-│   ├── requirements.txt        # Python dependencies
-│   ├── main.py                 # Entry point
-│   └── Dockerfile              # Container image
+│   │   ├── agents/             # AI Multi-Agent system (Helper, Explainer, etc.)
+│   │   ├── api/                # API Endpoints (Objects, Auth, WebSockets)
+│   │   ├── services/           # Gemini 3D Engine, Web Research, Chemistry, Physics
+│   │   └── data/               # Procedural templates & demo objects (e.g., car_engine.json)
+│   ├── tests/                  # Pytest unit and integration tests
+│   └── main.py                 # Backend application entrypoint
 │
-├── eureka-frontend/            # React frontend
+├── eureka-frontend/            # React + TypeScript + Three.js client
 │   ├── src/
-│   │   ├── components/         # React components
-│   │   ├── pages/              # Page components
-│   │   └── services/           # API services
-│   ├── package.json            # Node dependencies
-│   ├── vite.config.ts          # Vite configuration
-│   └── Dockerfile              # Container image
+│   │   ├── components/         # 3D Viewport, GltfWrapper, UI Controls, Camera Stream
+│   │   ├── pages/              # Cyber-lab dashboards and settings panels
+│   │   └── App.tsx             # Main dashboard shell & gesture mapping loops
+│   └── package.json
 │
-├── kubernetes/                 # K8s manifests
-├── helm/                       # Helm chart
-├── monitoring/                 # Prometheus & alerts
-├── docs/                       # Documentation
-├── scripts/                    # Utility scripts
+├── eureka-automation/          # TypeScript background worker & crawler
+│   ├── src/
+│   │   ├── scrapers/           # Academic crawling engines (ArXiv, PubMed)
+│   │   └── queue/              # BullMQ message queue setup
+│   └── package.json
 │
-├── docker-compose.yml          # Docker Compose
-├── docker-compose-elk.yml      # ELK Stack
-├── nginx.conf                  # Nginx reverse proxy
-├── init.sql                    # Database initialization
-├── .github/workflows/          # CI/CD pipeline
-├── LICENSE                     # MIT License
-└── README.md                   # This file
+├── kubernetes/                 # K8s manifests for production deployment
+├── helm/                       # Helm packaging for scalable cloud rollouts
+├── monitoring/                 # Prometheus metrics and Grafana alerts
+└── docker-compose.yml          # Consolidated multi-container setup (Backend, Frontend, Redis, DB, Ollama)
 ```
 
-## 🔧 Technology Stack
+---
 
-| Layer | Technologies |
-|-------|-------------|
-| **Frontend** | React 19, TypeScript, Vite, Three.js, React Three Fiber, MediaPipe, TailwindCSS |
-| **Backend** | FastAPI, Python 3.11, SQLAlchemy, Pydantic, Socket.io, Ollama, RDKit |
-| **Database** | PostgreSQL 15, Redis 7, pgvector |
-| **DevOps** | Docker, Kubernetes, Helm, GitHub Actions, Nginx |
-| **Monitoring** | Prometheus, ELK Stack (Elasticsearch, Logstash, Kibana) |
-| **Security** | JWT (PyJWT), slowapi rate limiting, TLS 1.2/1.3, CORS |
+## 🚀 Installation & Setup
 
-## 🔐 Security
+### Option 1: Quickstart with Docker Compose (Recommended)
 
-- **JWT Authentication** — Token-based user authentication (HS256, 24h expiry)
-- **Rate Limiting** — DDoS protection via slowapi
-- **SSL/TLS** — HTTPS with TLS 1.2/1.3 via Nginx
-- **Security Headers** — HSTS, X-Content-Type-Options, X-Frame-Options, XSS-Protection
-- **Input Validation** — Pydantic models for all API inputs
-- **CORS** — Configurable cross-origin security
-- **Non-root Containers** — Docker images run as unprivileged user
-
-## 📊 Monitoring & Observability
-
-- **Prometheus** — Metrics collection with alert rules
-- **ELK Stack** — Centralized logging
-- **Health Checks** — `/health`, `/health/detailed`, `/health/ready`
-- **Alerts** — HighErrorRate, HighLatency, PodCrashLooping, DBConnectionPool
-
-## 🧪 Running Tests
+To run the complete suite, including database, caching, local models, and analytics dashboards:
 
 ```bash
-# Backend tests
-cd eureka-backend
-pytest tests/ -v --cov=app
+# Clone the repository
+git clone https://github.com/Minato95-ayu/EUREKA.git
+cd EUREKA
 
-# Full test suite (23 tests)
-pytest -v
+# Configure environment variables
+cp .env.example .env # Add your GEMINI_API_KEY here
+
+# Build and start services
+docker-compose up --build -d
+
+# Pull the default local model for Ollama (optional fallback)
+docker-compose exec ollama ollama pull llama3
 ```
+
+Access the platform:
+*   **Frontend Web Interface**: [http://localhost:3000](http://localhost:3000)
+*   **Interactive API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+*   **Local Ollama Server**: [http://localhost:11434](http://localhost:11434)
+
+---
+
+### Option 2: Local Manual Setup (Development Mode)
+
+#### 1. Backend Setup (FastAPI)
+```bash
+cd eureka-backend
+python -m venv venv
+
+# Activate Virtual Environment
+# On Windows:
+.\venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
+
+# Install requirements (ensure RDKit-supported python version)
+pip install -r requirements.txt
+
+# Export your keys
+export GEMINI_API_KEY="your_api_key_here"  # Windows PowerShell: $env:GEMINI_API_KEY="your_api_key_here"
+
+# Start the application
+python main.py
+```
+
+#### 2. Frontend Setup (React)
+```bash
+cd ../eureka-frontend
+npm install
+npm run dev
+```
+
+#### 3. Automation Layer Setup (TypeScript Background Worker)
+```bash
+cd ../eureka-automation
+npm install
+npm run build
+npm start
+```
+
+---
+
+## 🧪 Testing Suite
+
+EUREKA maintains a rigorous test suite validating the physics simulator, agent coordination, and chemistry calculations.
+
+```bash
+# Navigate to the backend directory
+cd eureka-backend
+
+# Run complete pytest suite with coverage metrics
+pytest -v --cov=app
+```
+
+---
 
 ## 📈 Roadmap
 
-### Current Version (v1.0) ✅
-- 3D visualization with gesture control
-- Multi-agent AI system (5 agents)
-- Physics and chemistry simulation engine
-- Research paper integration (ArXiv + PubMed)
-- Real-time collaboration features
-- Production deployment infrastructure
+*   [x] **Phase 1**: Cyber-lab 3D dashboard & Three.js canvas integration.
+*   [x] **Phase 2**: MediaPipe hand gestures & Web Speech voice control MVP.
+*   [x] **Phase 3**: Wikipedia-grounded Gemini 3D Object generation.
+*   [x] **Phase 4**: Verlet 3D physics simulator and RDKit-driven chemistry solver.
+*   [ ] **Phase 5**: Full AR/VR support utilizing WebXR devices.
+*   [ ] **Phase 6**: Custom visual physics simulator node editor.
+*   [ ] **Phase 7**: Real-time collaborative shared virtual lab sessions via Redis-backed WebSockets.
 
-### Planned (v1.1+)
-- 🔄 AR/VR support (WebXR)
-- 🔄 Advanced molecular visualization
-- 🔄 Mobile app (iOS/Android)
-- 🔄 Offline mode
-- 🔄 Custom simulation builder
+---
 
 ## 🤝 Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-```bash
-# Fork → Clone → Branch → Commit → Push → PR
-git checkout -b feature/amazing-feature
-git commit -m 'Add amazing feature'
-git push origin feature/amazing-feature
-```
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
+
+---
 
 ## 📄 License
 
-EUREKA is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
+
+---
 
 ## 📝 Citation
 
+If you use EUREKA in your academic research, please cite our repository:
+
 ```bibtex
-@software{eureka2024,
+@software{eureka2026,
   title={EUREKA: Universal AI-Powered Virtual Research Lab},
   author={Kaushik, Ayush},
-  year={2024},
+  year={2026},
   url={https://github.com/Minato95-ayu/EUREKA}
 }
 ```
 
-## 🙏 Acknowledgments
-
-Built with: [Three.js](https://threejs.org/) • [React](https://react.dev/) • [FastAPI](https://fastapi.tiangolo.com/) • [Ollama](https://ollama.ai/) • [RDKit](https://www.rdkit.org/) • [MediaPipe](https://mediapipe.dev/)
-
----
-
 <p align="center">
-  Made with ❤️ for science education and research<br>
-  <strong>EUREKA — Where Discovery Happens 🔬🚀</strong>
+  Made with ❤️ for scientific education and global research. <br/>
+  <strong>EUREKA — Where Discovery Begins. 🔬🚀</strong>
 </p>

@@ -11,8 +11,8 @@ class OllamaService:
         self.host = host
         self.model = model
         self.timeout = timeout
-        # Set connect timeout to 2.0s to avoid hanging long on offline Ollama
-        self.client = httpx.AsyncClient(timeout=httpx.Timeout(float(timeout), connect=2.0))
+        # Set connect timeout to 2.0s to avoid hanging long on offline Ollama, and read timeout to 25s for fast fallback
+        self.client = httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=2.0))
         self._resolved_model = None
         self._health_cached = None
         self._health_timestamp = 0.0
@@ -63,6 +63,8 @@ class OllamaService:
                 "temperature": 0.7,
                 "top_p": 0.9,
             }
+            # Hardcap response length to force fast local generation
+            payload["options"] = {"num_predict": 350}
             if format:
                 payload["format"] = format
             if options:
