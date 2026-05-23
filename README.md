@@ -154,6 +154,23 @@ EUREKA leverages a multi-tier programming model. The following breakdown maps th
 | **💛 JavaScript** | **0.1%** | Web Speech API wrappers, config loaders, and bundling hooks | Browser Web Speech Recognition & Web Audio APIs |
 | **🧡 HTML** | **0.1%** | Main single-page web template & meta search engine optimization tags | Semantic HTML5 structure |
 
+### ⚙️ Under-the-Hood Performance Engines
+
+While the primary code repository consists of Python and TypeScript, EUREKA's runtime environment is accelerated by high-performance compiled engines operating at a native level:
+
+1. **C++ (Machine-Level Simulation & Graph Solving)**:
+   - **RDKit Engine**: Performs complex molecular structural analysis, property calculations, and chemical reaction pathway estimations natively in C++ for maximum throughput.
+   - **MediaPipe Backend**: Hand gesture detection algorithms and coordinate extraction are compiled as highly-optimized C++ libraries.
+
+2. **WebAssembly / Wasm (In-Browser Neural Execution)**:
+   - MediaPipe's deep learning hand tracking models are executed directly within the browser using WebAssembly compiled binaries, allowing for 60FPS gesture interactions without sending video frames to any remote server.
+
+3. **GLSL - OpenGL Shading Language (Direct GPU Graphics)**:
+   - The interactive 3D virtual viewport communicates directly with the GPU. Realistic rendering, shadows, metallic materials, and glowing particle collisions are compiled into native WebGL fragment and vertex shaders.
+
+4. **Cython & libuv (High-Concurrency Server Loop)**:
+   - The FastAPI backend utilizes `uvloop` (a Cython-compiled execution loop built on Node's `libuv` system), giving the Python backend network performance metrics comparable to Go (Golang) and native Node.js.
+
 ---
 
 ## 📂 Detailed Project Structure
