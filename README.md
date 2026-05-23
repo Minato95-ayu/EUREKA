@@ -264,7 +264,7 @@ pytest -v --cov=app
       <p><strong>Lead Architect & Creator of EUREKA</strong></p>
       <ul>
         <li>💻 <strong>Role:</strong> Full-Stack AI Engineer & System Designer</li>
-        <li>🎓 <strong>Status:</strong> Student Developer pushing boundaries in Virtual Scientific Simulation</li>
+        <li>🎓 <strong>Status:</strong> Student Developer (IIT Delhi) | Pushing boundaries in Virtual Scientific Simulation</li>
         <li>🌐 <strong>GitHub:</strong> <a href="https://github.com/Minato95-ayu">@Minato95-ayu</a></li>
         <li>✉️ <strong>Email:</strong> <a href="mailto:ayushkaushik1441@gmail.com">ayushkaushik1441@gmail.com</a></li>
       </ul>
