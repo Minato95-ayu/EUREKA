@@ -1,7 +1,11 @@
-# 🔬 EUREKA: Universal AI-Powered Virtual Research Lab
+# EUREKA: Universal AI-Powered Virtual Research Lab
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Minato95-ayu/EUREKA/main/docs/assets/banner.png" alt="EUREKA Banner" width="100%" style="border-radius: 8px;" />
+  <img src="docs/assets/eureka_logo.png" alt="EUREKA Logo" width="220px" style="border-radius: 12px; margin-bottom: 20px;" />
+</p>
+
+<p align="center">
+  <strong>🔬 Making scientific discovery and advanced research accessible to everyone, everywhere, for free. 🚀</strong>
 </p>
 
 <p align="center">
@@ -19,19 +23,23 @@
 </p>
 
 <p align="center">
-  <strong>🔬 Making scientific discovery and advanced research accessible to everyone, everywhere, for free. 🚀</strong>
-</p>
-
-<p align="center">
+  <a href="#-concept-to-creation-process">Process View</a> •
   <a href="#-key-features">Key Features</a> •
   <a href="#-architecture">Architecture</a> •
   <a href="#-installation--setup">Quick Start</a> •
-  <a href="#-project-structure">Project Structure</a> •
-  <a href="#-roadmap">Roadmap</a> •
-  <a href="#-contributing">Contributing</a>
+  <a href="#-security--compliance">Security</a> •
+  <a href="#-founder--developer">Developer Profile</a>
 </p>
 
 ---
+
+## 💡 Concept to Creation Process
+
+Below is a visualization of the interactive **EUREKA Cyber-Lab Dashboard** in action. Designed to run in high-performance dark mode, the interface integrates 3D viewports, gesture camera feeds, multi-agent AI logs, and real-time physical simulation data.
+
+<p align="center">
+  <img src="docs/assets/eureka_dashboard.png" alt="EUREKA Cyber-Lab Dashboard" width="100%" style="border-radius: 8px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+</p>
 
 **EUREKA** is a state-of-the-art, open-source AI-powered virtual research laboratory. It transforms traditional scientific discovery and education by combining **immersive 3D holographic visualization**, **gesture-based natural interface controls**, **real-time chemical/physical simulators**, and a **Wikipedia-backed multi-agent AI system** led by **ARIA** (AI Research and Innovation Assistant).
 
@@ -92,7 +100,7 @@ Whether you are modeling molecular mechanics, exploring the intricacies of a V8 
 
 ---
 
-## 📁 Project Structure
+## 📂 Project Structure
 
 ```bash
 EUREKA/
@@ -184,13 +192,16 @@ npm install
 npm run dev
 ```
 
-#### 3. Automation Layer Setup (TypeScript Background Worker)
-```bash
-cd ../eureka-automation
-npm install
-npm run build
-npm start
-```
+---
+
+## 🛡️ Security & Compliance
+
+EUREKA is designed with robust security protocols suited for scientific and educational sandbox environments:
+
+*   **API Security**: Implements granular CORS origin controls, custom secure headers (HSTS, CSP, X-Frame-Options), and client rate-limiting via the `slowapi` middleware.
+*   **Authentication**: Secure token-based user authentication using **JSON Web Tokens (JWT)** with HS256 encryption.
+*   **Access Isolation**: Non-root container privileges configured inside both the frontend and backend Dockerfiles.
+*   **Resource Throttling**: Sandboxed environments prevent heavy model generation or simulation operations from overflowing backend compute cycles.
 
 ---
 
@@ -220,17 +231,26 @@ pytest -v --cov=app
 
 ---
 
-## 🤝 Contributing
+## 👑 Founder & Developer
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
+<table border="0" cellpadding="10" cellspacing="0">
+  <tr>
+    <td valign="top" width="180">
+      <img src="docs/assets/ayush_kaushik.jpg" alt="Ayush Kaushik" width="160" style="border-radius: 12px; border: 3px solid #009688; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+    </td>
+    <td valign="top">
+      <h3>Ayush Kaushik</h3>
+      <p><strong>Lead Architect & Creator of EUREKA</strong></p>
+      <ul>
+        <li>💻 <strong>Role:</strong> Full-Stack AI Engineer & System Designer</li>
+        <li>🎓 <strong>Status:</strong> Student Developer pushing boundaries in Virtual Scientific Simulation</li>
+        <li>🌐 <strong>GitHub:</strong> <a href="https://github.com/Minato95-ayu">@Minato95-ayu</a></li>
+        <li>✉️ <strong>Email:</strong> <a href="mailto:ayushkaushik1441@gmail.com">ayushkaushik1441@gmail.com</a></li>
+      </ul>
+      <p><em>"EUREKA was built to democratize access to advanced scientific research interfaces. By combining spatial computing, voice controls, and LLM-driven generation, we enable students and researchers to visualize and experiment with complex structures without expensive laboratory setups."</em></p>
+    </td>
+  </tr>
+</table>
 
 ---
 
