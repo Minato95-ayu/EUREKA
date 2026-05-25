@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi.responses import FileResponse
 
 from app.models.object_graph import ExplorableObject, ObjectComponent, ObjectSearchResult
 from app.services.object_library import ObjectLibrary
 from app.config import get_settings
 from app.security import require_role
-
-
 router = APIRouter(prefix="/api/objects", tags=["objects"])
 object_library = ObjectLibrary()
 
@@ -113,3 +112,14 @@ async def generate_from_images(
             )
         ]
     )
+
+
+@router.get("/download/{model_id}.glb")
+async def download_glb_model(model_id: str):
+    """Serves the compiled 3D GLB model for a given model ID."""
+    from app.services.blender_service import BlenderService
+    blender_service = BlenderService()
+    path = blender_service.get_model_cache_path(model_id)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="GLB model not found")
+    return FileResponse(path, media_type="model/gltf-binary", filename=f"{model_id}.glb")

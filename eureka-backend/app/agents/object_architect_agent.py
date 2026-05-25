@@ -173,7 +173,20 @@ PROCEDURAL DESIGN RULES:
                 with cache_path.open("r", encoding="utf-8") as f:
                     payload = json.load(f)
                 logger.info(f"Cache hit for query: '{query}'")
-                return ExplorableObject.model_validate(payload)
+                obj = ExplorableObject.model_validate(payload)
+                
+                # Check if it was cached as procedural, but Blender is now available
+                from app.services.blender_service import BlenderService
+                blender_service = BlenderService()
+                if obj.model.kind == "procedural" and blender_service.is_blender_available():
+                    logger.info(f"Cached object '{query}' is procedural but Blender is available. Compiling now...")
+                    obj = await self._compile_and_mutate(obj)
+                    try:
+                        with cache_path.open("w", encoding="utf-8") as f:
+                            json.dump(obj.model_dump(by_alias=True), f, indent=2)
+                    except Exception as cache_err:
+                        logger.warning(f"Failed to update cache with compiled object: {cache_err}")
+                return obj
             except Exception as e:
                 logger.warning(f"Cache read error for '{query}': {e}. Regenerating...")
 
@@ -198,6 +211,7 @@ PROCEDURAL DESIGN RULES:
         if not await self.ollama.health_check():
             logger.info(f"Ollama is offline. Instantly serving smart fallback preset for query: '{query}'")
             fallback_obj = self.generate_fallback_object(query, research_data)
+            fallback_obj = await self._compile_and_mutate(fallback_obj)
             try:
                 with cache_path.open("w", encoding="utf-8") as f:
                     json.dump(fallback_obj.model_dump(by_alias=True), f, indent=2)
@@ -213,6 +227,7 @@ PROCEDURAL DESIGN RULES:
             if gemini_result:
                 cleaned_json = self._apply_rule_engine(gemini_result, query)
                 validated_obj = ExplorableObject.model_validate(cleaned_json)
+                validated_obj = await self._compile_and_mutate(validated_obj)
                 try:
                     with cache_path.open("w", encoding="utf-8") as f:
                         json.dump(validated_obj.model_dump(by_alias=True), f, indent=2)
@@ -229,6 +244,7 @@ PROCEDURAL DESIGN RULES:
         if not await self.ollama.health_check():
             logger.info(f"Ollama also offline. Serving smart Wikipedia fallback for: '{query}'")
             fallback_obj = self.generate_fallback_object(query, research_data)
+            fallback_obj = await self._compile_and_mutate(fallback_obj)
             try:
                 with cache_path.open("w", encoding="utf-8") as f:
                     json.dump(fallback_obj.model_dump(by_alias=True), f, indent=2)
@@ -252,6 +268,7 @@ PROCEDURAL DESIGN RULES:
             parsed_json = json.loads(raw_response.strip())
             cleaned_json = self._apply_rule_engine(parsed_json, query)
             validated_obj = ExplorableObject.model_validate(cleaned_json)
+            validated_obj = await self._compile_and_mutate(validated_obj)
             try:
                 with cache_path.open("w", encoding="utf-8") as f:
                     json.dump(validated_obj.model_dump(by_alias=True), f, indent=2)
@@ -261,6 +278,7 @@ PROCEDURAL DESIGN RULES:
         except Exception as err:
             logger.error(f"[Ollama] Also failed for '{query}': {err}. Serving Wikipedia smart fallback...")
             fallback_obj = self.generate_fallback_object(query, research_data)
+            fallback_obj = await self._compile_and_mutate(fallback_obj)
             try:
                 with cache_path.open("w", encoding="utf-8") as f:
                     json.dump(fallback_obj.model_dump(by_alias=True), f, indent=2)
@@ -333,7 +351,7 @@ PROCEDURAL DESIGN RULES:
             # Clean geometry structures
             geometry = c.setdefault("geometry", {})
             gtype = geometry.get("type", "box")
-            valid_types = ["box", "cylinder", "capsule", "fan", "sphere", "cone", "torus", "hemisphere", "rounded_box", "lathe"]
+            valid_types = ["box", "cylinder", "capsule", "fan", "sphere", "cone", "torus", "hemisphere", "rounded_box", "lathe", "csg", "gltf", "empty", "none"]
             if gtype not in valid_types:
                 geometry["type"] = "box"
                 gtype = "box"
@@ -402,6 +420,42 @@ PROCEDURAL DESIGN RULES:
 
         data["components"] = components
         return data
+
+    async def _compile_and_mutate(self, obj: ExplorableObject) -> ExplorableObject:
+        """Helper to compile procedural shapes into a GLB file and mutate the object graph."""
+        from app.services.blender_service import BlenderService
+        blender_service = BlenderService()
+        if blender_service.is_blender_available():
+            obj_dict = obj.model_dump(by_alias=True)
+            glb_filename = await blender_service.compile_object(obj_dict)
+            if glb_filename:
+                # Update model reference to gltf
+                obj.model.kind = "gltf"
+                obj.model.asset_url = f"/api/objects/download/{glb_filename}"
+                
+                # Find root component (no parent)
+                root_comp = None
+                for comp in obj.components:
+                    if not comp.parent_id:
+                        root_comp = comp
+                        break
+                
+                if not root_comp and obj.components:
+                    root_comp = obj.components[0]
+                    
+                if root_comp:
+                    # Root geometry is set to gltf
+                    root_comp.geometry = {
+                        "type": "gltf",
+                        "url": f"/api/objects/download/{glb_filename}"
+                    }
+                    # Children are set to empty
+                    for comp in obj.components:
+                        if comp != root_comp:
+                            comp.geometry = {"type": "empty"}
+                
+                logger.info(f"Blender compiled successfully. Mutated '{obj.id}' to gltf/empty geometry.")
+        return obj
 
     def generate_fallback_object(self, query: str, research_data: dict = None) -> ExplorableObject:
         """Creates a beautiful pre-coded structural assembly when LLM fails or times out."""
