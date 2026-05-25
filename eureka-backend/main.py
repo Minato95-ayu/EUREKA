@@ -1,10 +1,12 @@
-from fastapi import FastAPI, WebSocket, HTTPException
+from fastapi import FastAPI, WebSocket, HTTPException, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import logging
+import time
 from contextlib import asynccontextmanager
 
 from app.config import get_settings
+from app.security import require_role, validate_security_config, verify_websocket_token
 from app.services.ollama_service import OllamaService
 from app.services.agent_manager import AgentManager
 from app.websocket.manager import ConnectionManager
@@ -21,6 +23,7 @@ ollama_service = None
 agent_manager = None
 connection_manager = ConnectionManager()
 stream_manager = SimulationStreamManager(sim_manager)
+RATE_BUCKETS: dict[str, list[float]] = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,6 +31,7 @@ async def lifespan(app: FastAPI):
     global ollama_service, agent_manager
     
     settings = get_settings()
+    validate_security_config()
     
     # Startup
     logger.info("Starting EUREKA with Multi-Agent System...")
@@ -54,6 +58,69 @@ app = FastAPI(
     version="3.0.0",
     lifespan=lifespan
 )
+
+try:
+    from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+    REQUEST_COUNT = Counter("eureka_http_requests_total", "HTTP requests", ["method", "path", "status"])
+    REQUEST_LATENCY = Histogram("eureka_http_request_seconds", "HTTP request latency", ["method", "path"])
+except Exception:
+    REQUEST_COUNT = None
+    REQUEST_LATENCY = None
+    CONTENT_TYPE_LATEST = "text/plain"
+
+
+@app.middleware("http")
+async def production_guardrails(request: Request, call_next):
+    settings = get_settings()
+    now = time.time()
+    client_ip = request.client.host if request.client else "unknown"
+    bucket = RATE_BUCKETS.setdefault(client_ip, [])
+    cutoff = now - 60
+    RATE_BUCKETS[client_ip] = [stamp for stamp in bucket if stamp > cutoff]
+    if len(RATE_BUCKETS[client_ip]) >= settings.RATE_LIMIT_PER_MINUTE:
+        return Response("Rate limit exceeded", status_code=429)
+    RATE_BUCKETS[client_ip].append(now)
+
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > settings.MAX_REQUEST_BODY_BYTES:
+                return Response("Request body too large", status_code=413)
+        except ValueError:
+            return Response("Invalid Content-Length", status_code=400)
+
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed = time.perf_counter() - start
+
+    path = request.url.path
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(self), microphone=(self), geolocation=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdn.jsdelivr.net; "
+        "connect-src 'self' http://localhost:8000 ws://localhost:8000 https://en.wikipedia.org; "
+        "img-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline'; "
+        "worker-src 'self' blob:; "
+        "media-src 'self' blob:; "
+        "frame-ancestors 'self'"
+    )
+
+    if REQUEST_COUNT and REQUEST_LATENCY:
+        REQUEST_COUNT.labels(request.method, path, str(response.status_code)).inc()
+        REQUEST_LATENCY.labels(request.method, path).observe(elapsed)
+
+    logger.info(
+        "http_request method=%s path=%s status=%s duration_ms=%s",
+        request.method,
+        path,
+        response.status_code,
+        int(elapsed * 1000),
+    )
+    return response
 
 # Register routers
 app.include_router(simulations_router)
@@ -83,16 +150,27 @@ async def health_check():
         "version": "3.0.0"
     }
 
+
+@app.get("/metrics")
+async def metrics():
+    if not REQUEST_COUNT:
+        return Response("prometheus_client not installed\n", media_type="text/plain")
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
 # ============ MULTI-AGENT ENDPOINTS ============
 
 @app.post("/api/agents/process")
 async def process_with_agents(
     message: str,
     experiment_id: str = None,
-    experiment_context: dict = None
+    experiment_context: dict = None,
+    user: dict = Depends(require_role("editor"))
 ):
     """Process request through multi-agent system"""
     try:
+        settings = get_settings()
+        if len(message) > settings.MAX_AI_PROMPT_CHARS:
+            raise HTTPException(status_code=413, detail="Message exceeds AI prompt limit")
         result = await agent_manager.process_request(
             user_message=message,
             experiment_context=experiment_context
@@ -111,10 +189,14 @@ async def process_with_agents(
 async def stream_agents_response(
     message: str,
     experiment_id: str = None,
-    experiment_context: dict = None
+    experiment_context: dict = None,
+    user: dict = Depends(require_role("editor"))
 ):
     """Stream response from multi-agent system"""
     try:
+        settings = get_settings()
+        if len(message) > settings.MAX_AI_PROMPT_CHARS:
+            raise HTTPException(status_code=413, detail="Message exceeds AI prompt limit")
         async def generate():
             async for chunk in agent_manager.stream_request(
                 user_message=message,
@@ -132,7 +214,8 @@ async def stream_agents_response(
 @app.post("/api/agents/explain")
 async def explain(
     concept: str,
-    context: dict = None
+    context: dict = None,
+    user: dict = Depends(require_role("viewer"))
 ):
     """Use Explainer Agent"""
     try:
@@ -150,7 +233,8 @@ async def explain(
 async def analyze(
     molecule: str,
     analysis_type: str = "comprehensive",
-    context: dict = None
+    context: dict = None,
+    user: dict = Depends(require_role("viewer"))
 ):
     """Use Analyzer Agent"""
     try:
@@ -169,7 +253,8 @@ async def analyze(
 async def predict(
     scenario: str,
     variables: dict = None,
-    context: dict = None
+    context: dict = None,
+    user: dict = Depends(require_role("editor"))
 ):
     """Use Thinker Agent"""
     try:
@@ -187,7 +272,8 @@ async def predict(
 @app.post("/api/agents/research")
 async def research(
     query: str,
-    context: dict = None
+    context: dict = None,
+    user: dict = Depends(require_role("viewer"))
 ):
     """Use Research Integrator Agent"""
     try:
@@ -204,7 +290,7 @@ async def research(
 # ============ EXPERIMENTS (Phase 2 Compatibility) ============
 
 @app.post("/api/experiments")
-async def create_experiment(name: str, objective: str):
+async def create_experiment(name: str, objective: str, user: dict = Depends(require_role("editor"))):
     """Create new experiment"""
     return {
         "status": "success",
@@ -214,7 +300,7 @@ async def create_experiment(name: str, objective: str):
     }
 
 @app.get("/api/experiments/{experiment_id}")
-async def get_experiment(experiment_id: str):
+async def get_experiment(experiment_id: str, user: dict = Depends(require_role("viewer"))):
     """Get experiment details"""
     return {
         "experiment_id": experiment_id,
@@ -227,6 +313,7 @@ async def get_experiment(experiment_id: str):
 @app.websocket("/ws/experiment/{experiment_id}")
 async def websocket_endpoint(websocket: WebSocket, experiment_id: str):
     """WebSocket for real-time multi-agent responses"""
+    verify_websocket_token(websocket, "viewer")
     await connection_manager.connect(websocket, experiment_id)
     try:
         while True:
@@ -234,6 +321,10 @@ async def websocket_endpoint(websocket: WebSocket, experiment_id: str):
             
             message = data.get("message")
             context = data.get("context", {})
+            settings = get_settings()
+            if not isinstance(message, str) or len(message) > settings.MAX_AI_PROMPT_CHARS:
+                await websocket.send_json({"type": "error", "message": "Invalid or oversized message"})
+                continue
             
             # Process through multi-agent system
             result = await agent_manager.process_request(
@@ -260,6 +351,7 @@ async def websocket_endpoint(websocket: WebSocket, experiment_id: str):
 @app.websocket("/ws/simulation/{sim_id}")
 async def simulation_websocket_endpoint(websocket: WebSocket, sim_id: str):
     """WebSocket for real-time simulation streaming"""
+    verify_websocket_token(websocket, "viewer")
     await stream_manager.stream_simulation(websocket, sim_id)
 
 # ============ ROOT ============

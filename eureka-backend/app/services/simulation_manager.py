@@ -13,7 +13,7 @@ class SimulationManager:
     
     def __init__(self):
         self.simulations: Dict[str, Dict] = {}
-        self.physics_engine = PhysicsEngine()
+        self.physics_engines: Dict[str, PhysicsEngine] = {}
         self.chemistry_engine = ChemistryEngine()
     
     async def create_simulation(
@@ -39,6 +39,7 @@ class SimulationManager:
             "results": None,
             "created_at": None
         }
+        self.physics_engines[sim_id] = PhysicsEngine()
         
         # Database persistence
         await db.execute("""
@@ -71,7 +72,8 @@ class SimulationManager:
             logger.error(f"Invalid particle type: {particle_type}")
             return False
         
-        self.physics_engine.add_particle(
+        engine = self.physics_engines.setdefault(sim_id, PhysicsEngine())
+        engine.add_particle(
             particle_id=particle_id,
             particle_type=particle_type_enum,
             position=position,
@@ -114,8 +116,9 @@ class SimulationManager:
         """, "running", sim_id)
         
         try:
-            self.physics_engine.time_step = time_step
-            results = self.physics_engine.run_simulation(steps)
+            engine = self.physics_engines.setdefault(sim_id, PhysicsEngine())
+            engine.time_step = time_step
+            results = engine.run_simulation(steps)
             
             self.simulations[sim_id]["results"] = results
             self.simulations[sim_id]["status"] = "completed"
@@ -188,7 +191,7 @@ class SimulationManager:
         
         return {
             "simulation": self.simulations[sim_id],
-            "physics_state": self.physics_engine.get_state()
+            "physics_state": self.physics_engines.setdefault(sim_id, PhysicsEngine()).get_state()
         }
     
     def get_simulation_results(self, sim_id: str) -> Dict[str, Any]:

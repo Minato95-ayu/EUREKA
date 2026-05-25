@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 
 from app.models.object_graph import ExplorableObject, ObjectComponent, ObjectSearchResult
 from app.services.object_library import ObjectLibrary
+from app.config import get_settings
+from app.security import require_role
 
 
 router = APIRouter(prefix="/api/objects", tags=["objects"])
@@ -9,12 +11,15 @@ object_library = ObjectLibrary()
 
 
 @router.get("/search", response_model=list[ObjectSearchResult])
-async def search_objects(q: str = Query(default="", description="Object or component search text")):
+async def search_objects(
+    q: str = Query(default="", max_length=120, description="Object or component search text"),
+    user: dict = Depends(require_role("viewer")),
+):
     return object_library.search(q)
 
 
 @router.get("/{object_id}", response_model=ExplorableObject)
-async def get_object(object_id: str):
+async def get_object(object_id: str, user: dict = Depends(require_role("viewer"))):
     obj = object_library.get_object(object_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Object not found")
@@ -22,7 +27,7 @@ async def get_object(object_id: str):
 
 
 @router.get("/{object_id}/components/{component_id}", response_model=ObjectComponent)
-async def get_component(object_id: str, component_id: str):
+async def get_component(object_id: str, component_id: str, user: dict = Depends(require_role("viewer"))):
     component = object_library.get_component(object_id, component_id)
     if not component:
         raise HTTPException(status_code=404, detail="Component not found")
@@ -30,7 +35,10 @@ async def get_component(object_id: str, component_id: str):
 
 
 @router.post("/generate", response_model=ExplorableObject)
-async def generate_object(q: str = Query(..., description="Object name to generate")):
+async def generate_object(
+    q: str = Query(..., max_length=120, description="Object name to generate"),
+    user: dict = Depends(require_role("editor")),
+):
     from main import ollama_service
     from app.agents.object_architect_agent import ObjectArchitectAgent
     
@@ -56,8 +64,24 @@ from fastapi import UploadFile, File
 from typing import List
 
 @router.post("/generate-from-images", response_model=ExplorableObject)
-async def generate_from_images(files: List[UploadFile] = File(...)):
+async def generate_from_images(
+    files: List[UploadFile] = File(...),
+    user: dict = Depends(require_role("editor")),
+):
     """Mock endpoint to handle 2D image to 3D GLB conversion"""
+    settings = get_settings()
+    if len(files) > settings.MAX_UPLOAD_FILES:
+        raise HTTPException(status_code=413, detail="Too many files uploaded")
+    allowed_types = {"image/jpeg", "image/png", "image/webp"}
+    for upload in files:
+        if upload.content_type not in allowed_types:
+            raise HTTPException(status_code=415, detail=f"Unsupported file type: {upload.content_type}")
+        size = 0
+        while chunk := await upload.read(1024 * 1024):
+            size += len(chunk)
+            if size > settings.MAX_UPLOAD_FILE_BYTES:
+                raise HTTPException(status_code=413, detail=f"File too large: {upload.filename}")
+        await upload.seek(0)
     # In a real scenario, this would send images to Luma AI, Tripo3D, or Meshy
     # and return a URL to a generated .glb file.
     

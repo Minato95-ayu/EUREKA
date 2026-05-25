@@ -30,11 +30,11 @@ spec:
             configMapKeyRef:
               name: eureka-config
               key: redis-url
-        - name: OLLAMA_URL
+        - name: OLLAMA_HOST
           valueFrom:
             configMapKeyRef:
               name: eureka-config
-              key: ollama-url
+              key: ollama-host
         resources:
           requests:
             memory: "256Mi"
