@@ -15,13 +15,15 @@ logger = logging.getLogger(__name__)
 class ObjectArchitectAgent(BaseAgent):
     """Generates procedurally assembled, 3D-ready structured object graphs from keywords."""
 
-    def __init__(self, ollama_service: OllamaService):
+    def __init__(self, ollama_service: OllamaService, library_dir: Path | None = None):
         super().__init__(ollama_service, "ObjectArchitect")
         self.settings = get_settings()
         self.cache_dir = Path(__file__).resolve().parents[1] / "data" / "generated_cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.research_service = WebResearchService()
         self.gemini_service = Gemini3DService()  # primary AI – uses GEMINI_API_KEY env var
+        from app.services.object_repository import ObjectRepository
+        self.repository = ObjectRepository(library_dir=library_dir)
 
     def _get_system_prompt(self, research_context: str = "") -> str:
         research_block = ""
@@ -174,9 +176,28 @@ PROCEDURAL DESIGN RULES:
 
     async def generate_object(self, query: str) -> ExplorableObject:
         """Checks cache, executes LLM request, applies rule cleaning, and returns validated model."""
+        obj_id = query.strip().lower().replace(" ", "_")
+        
+        # 1. Repository Lookup
+        repo = self.repository
+        try:
+            repo_obj = repo.load_object(obj_id)
+            if repo_obj:
+                logger.info(f"Repository hit for: '{obj_id}'")
+                
+                # Check if it was cached as procedural, but Blender is now available
+                from app.services.blender_service import BlenderService
+                blender_service = BlenderService()
+                if repo_obj.model.kind == "procedural" and blender_service.is_blender_available():
+                    logger.info(f"Repository object '{obj_id}' is procedural but Blender is available. Compiling now...")
+                    repo_obj = await self._compile_and_mutate(repo_obj)
+                return repo_obj
+        except Exception as e:
+            logger.warning(f"Repository read error for '{obj_id}': {e}")
+
         cache_path = self._get_cache_path(query)
         
-        # 1. Cache Lookup
+        # 2. Cache Lookup
         if cache_path.exists():
             try:
                 with cache_path.open("r", encoding="utf-8") as f:
@@ -464,6 +485,23 @@ PROCEDURAL DESIGN RULES:
                             comp.geometry = {"type": "empty"}
                 
                 logger.info(f"Blender compiled successfully. Mutated '{obj.id}' to gltf/empty geometry.")
+                
+                # Save to repository
+                try:
+                    repo = self.repository
+                    glb_path = blender_service.get_model_cache_path(obj.id)
+                    repo.save_object(obj, compiled_glb_path=str(glb_path))
+                    logger.info(f"Saved compiled object '{obj.id}' to repository.")
+                except Exception as repo_err:
+                    logger.warning(f"Failed to save compiled object to repository: {repo_err}")
+        else:
+            # Blender not available, save procedural model to repository
+            try:
+                repo = self.repository
+                repo.save_object(obj)
+                logger.info(f"Saved procedural object '{obj.id}' to repository.")
+            except Exception as repo_err:
+                logger.warning(f"Failed to save procedural object to repository: {repo_err}")
         return obj
 
     def generate_fallback_object(self, query: str, research_data: dict = None) -> ExplorableObject:

@@ -49,6 +49,7 @@ class ExplorableObject(BaseModel):
     default_view: str = Field(default="assembled", alias="defaultView")
     model: ObjectModelRef = Field(default_factory=ObjectModelRef)
     components: list[ObjectComponent]
+    parameters: dict[str, Any] = Field(default_factory=dict)
 
 
 class ObjectSearchResult(BaseModel):

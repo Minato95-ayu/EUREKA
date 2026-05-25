@@ -1,0 +1,83 @@
+{
+  "aluminum_alloy": {
+    "name": "Aluminum Alloy (6061-T6)",
+    "density": 2.7,
+    "thermal_conductivity": 167.0,
+    "thermal_limit": 300.0,
+    "yield_strength": 276.0,
+    "youngs_modulus": 68.9,
+    "cte": 23.6
+  },
+  "steel": {
+    "name": "Forged Carbon Steel",
+    "density": 7.85,
+    "thermal_conductivity": 50.0,
+    "thermal_limit": 1200.0,
+    "yield_strength": 415.0,
+    "youngs_modulus": 200.0,
+    "cte": 12.0
+  },
+  "carbon_fiber": {
+    "name": "Carbon Fiber Composite",
+    "density": 1.6,
+    "thermal_conductivity": 5.0,
+    "thermal_limit": 400.0,
+    "yield_strength": 900.0,
+    "youngs_modulus": 135.0,
+    "cte": -0.5
+  },
+  "cast_iron": {
+    "name": "Grey Cast Iron",
+    "density": 7.2,
+    "thermal_conductivity": 53.0,
+    "thermal_limit": 1150.0,
+    "yield_strength": 240.0,
+    "youngs_modulus": 110.0,
+    "cte": 11.0
+  },
+  "copper": {
+    "name": "Pure Copper",
+    "density": 8.96,
+    "thermal_conductivity": 401.0,
+    "thermal_limit": 1000.0,
+    "yield_strength": 70.0,
+    "youngs_modulus": 117.0,
+    "cte": 16.5
+  },
+  "rubber": {
+    "name": "Vulcanized Rubber",
+    "density": 1.1,
+    "thermal_conductivity": 0.15,
+    "thermal_limit": 120.0,
+    "yield_strength": 15.0,
+    "youngs_modulus": 0.05,
+    "cte": 77.0
+  },
+  "brass": {
+    "name": "Yellow Brass",
+    "density": 8.5,
+    "thermal_conductivity": 115.0,
+    "thermal_limit": 900.0,
+    "yield_strength": 180.0,
+    "youngs_modulus": 96.0,
+    "cte": 20.3
+  },
+  "chrome": {
+    "name": "Chrome Plating",
+    "density": 7.19,
+    "thermal_conductivity": 93.9,
+    "thermal_limit": 1800.0,
+    "yield_strength": 360.0,
+    "youngs_modulus": 279.0,
+    "cte": 4.9
+  },
+  "glass": {
+    "name": "Borosilicate Glass",
+    "density": 2.23,
+    "thermal_conductivity": 1.14,
+    "thermal_limit": 500.0,
+    "yield_strength": 280.0,
+    "youngs_modulus": 64.0,
+    "cte": 3.3
+  }
+}

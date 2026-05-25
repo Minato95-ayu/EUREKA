@@ -1,0 +1,10 @@
+{
+  "rootId": "hull",
+  "relations": [
+    {
+      "id": "hull",
+      "parentId": null,
+      "children": []
+    }
+  ]
+}

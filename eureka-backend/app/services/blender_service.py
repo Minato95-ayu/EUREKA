@@ -67,6 +67,7 @@ class BlenderService:
         """
         model_id = obj_data.get("id", "generic_object")
         components = obj_data.get("components", [])
+        parameters = obj_data.get("parameters", {})
         
         if not components:
             logger.warning("Cannot compile GLB: No components provided.")
@@ -77,10 +78,18 @@ class BlenderService:
             logger.warning(f"Blender executable not found at '{self.blender_path}'. Skipping mesh compilation.")
             return ""
 
+        # Solve relative expressions and evaluate CAD dimensions
+        from app.services.parameter_resolver import resolve_parametric_object
+        try:
+            resolved_components = resolve_parametric_object(components, parameters)
+        except Exception as e:
+            logger.error(f"Parametric resolution failed during compilation: {e}")
+            return ""
+
         output_path = self.get_model_cache_path(model_id)
         
         # Generate the Blender python script content
-        script_content = self._generate_blender_script(components, str(output_path))
+        script_content = self._generate_blender_script(resolved_components, str(output_path))
         
         # Write script to a temporary file
         temp_script_path = self.cache_dir / f"compile_{model_id}.py"
@@ -307,67 +316,138 @@ for comp in components_data:
     rot = comp.get("rotation", [0.0, 0.0, 0.0])
     local_mat = make_blender_matrix(pos, rot)
     
-    # 3. Layout Arrays
+    # 3. Layout Arrays or Snapping Anchor alignment
     layout = comp.get("layout", {{}})
-    layout_type = layout.get("type")
+    attach = layout.get("attach_to") or comp.get("attach_to")
     
-    layout_mats = []
-    if layout_type == "radial_array":
-        count = layout.get("count", 4)
-        radius = layout.get("radius", 1.0)
-        center = layout.get("center", [0.0, 0.0, 0.0])
-        axis = layout.get("axis", "Y") # Default to vertical Y rotation in ThreeJS
-        b_center = mathutils.Vector((center[0], -center[2], center[1]))
-        
-        for i in range(count):
-            angle = (2 * math.pi / count) * i
-            if axis == "Y": # vertical axis in ThreeJS -> Z axis in Blender
-                loc = mathutils.Vector((radius * math.cos(angle), radius * math.sin(angle), 0.0)) + b_center
-                rot_mat = mathutils.Euler((0.0, 0.0, angle)).to_matrix().to_4x4()
-            elif axis == "Z": # depth axis in ThreeJS -> Y axis in Blender
-                loc = mathutils.Vector((radius * math.cos(angle), 0.0, radius * math.sin(angle))) + b_center
-                rot_mat = mathutils.Euler((0.0, angle, 0.0)).to_matrix().to_4x4()
-            else: # X axis
-                loc = mathutils.Vector((0.0, radius * math.cos(angle), radius * math.sin(angle))) + b_center
-                rot_mat = mathutils.Euler((angle, 0.0, 0.0)).to_matrix().to_4x4()
-            
-            layout_mats.append(mathutils.Matrix.Translation(loc) @ rot_mat)
-            
-    elif layout_type == "linear_array":
-        count = layout.get("count", 4)
-        spacing = layout.get("spacing", [0.2, 0.0, 0.0])
-        start = layout.get("start", [0.0, 0.0, 0.0])
-        
-        b_spacing = mathutils.Vector((spacing[0], -spacing[2], spacing[1]))
-        b_start = mathutils.Vector((start[0], -start[2], start[1]))
-        
-        for i in range(count):
-            offset = b_start + i * b_spacing
-            layout_mats.append(mathutils.Matrix.Translation(offset))
-            
-    elif layout_type == "mirror":
-        axis = layout.get("axis", "X")
-        mirror_scale = mathutils.Vector((1, 1, 1))
-        if axis == "X":
-            mirror_scale[0] = -1
-        elif axis == "Y":
-            mirror_scale[2] = -1 # ThreeJS Y is Blender Z
-        else: # "Z"
-            mirror_scale[1] = -1 # ThreeJS Z is Blender -Y
-            
-        mirror_mat = mathutils.Matrix.Scale(-1, 4, mirror_scale)
-        layout_mats.append(mathutils.Matrix.Identity(4))
-        layout_mats.append(mirror_mat)
-        
-    else:
-        layout_mats.append(mathutils.Matrix.Identity(4))
-        
-    # 4. Multiply parent & layout matrices
     comp_world_mats = []
-    for p_mat in parent_mats:
-        for l_mat in layout_mats:
-            comp_world_mats.append(p_mat @ l_mat @ local_mat)
+    
+    if attach:
+        target_id = attach.get("target")
+        if target_id == "parent":
+            target_id = pid
             
+        if target_id and target_id in world_matrices:
+            target_mats = world_matrices[target_id]
+            target_comp = next((c for c in components_data if c["id"] == target_id), None)
+            target_geom = target_comp.get("geometry", {{}}) if target_comp else {{}}
+            
+            anchor_name = attach.get("anchor", "top")
+            offset = attach.get("offset", [0.0, 0.0, 0.0])
+            offset_vec = mathutils.Vector((offset[0], offset[1], offset[2]))
+            
+            gtype = target_geom.get("type", "box")
+            anchor_offset = mathutils.Vector((0.0, 0.0, 0.0))
+            
+            if gtype in ["cylinder", "capsule", "cone", "lathe", "fan"]:
+                depth = target_geom.get("depth", 1.0)
+                radius = target_geom.get("radius", 0.5)
+                if anchor_name in ["front", "top"]:
+                    anchor_offset = mathutils.Vector((0.0, depth / 2.0, 0.0))
+                elif anchor_name in ["back", "bottom"]:
+                    anchor_offset = mathutils.Vector((0.0, -depth / 2.0, 0.0))
+                elif anchor_name in ["radial", "right"]:
+                    anchor_offset = mathutils.Vector((radius, 0.0, 0.0))
+                elif anchor_name == "left":
+                    anchor_offset = mathutils.Vector((-radius, 0.0, 0.0))
+                    
+            elif gtype in ["box", "rounded_box"]:
+                size = target_geom.get("size", [1.0, 1.0, 1.0])
+                w, h, d = size[0], size[1], size[2]
+                if anchor_name == "top":
+                    anchor_offset = mathutils.Vector((0.0, h / 2.0, 0.0))
+                elif anchor_name == "bottom":
+                    anchor_offset = mathutils.Vector((0.0, -h / 2.0, 0.0))
+                elif anchor_name == "right":
+                    anchor_offset = mathutils.Vector((w / 2.0, 0.0, 0.0))
+                elif anchor_name == "left":
+                    anchor_offset = mathutils.Vector((-w / 2.0, 0.0, 0.0))
+                elif anchor_name == "front":
+                    anchor_offset = mathutils.Vector((0.0, 0.0, d / 2.0))
+                elif anchor_name == "back":
+                    anchor_offset = mathutils.Vector((0.0, 0.0, -d / 2.0))
+                    
+            elif gtype in ["sphere", "hemisphere"]:
+                radius = target_geom.get("radius", 0.5)
+                if anchor_name in ["top", "front"]:
+                    anchor_offset = mathutils.Vector((0.0, radius, 0.0))
+                elif anchor_name in ["bottom", "back"]:
+                    anchor_offset = mathutils.Vector((0.0, -radius, 0.0))
+                elif anchor_name == "right":
+                    anchor_offset = mathutils.Vector((radius, 0.0, 0.0))
+                elif anchor_name == "left":
+                    anchor_offset = mathutils.Vector((-radius, 0.0, 0.0))
+            
+            attach_local = anchor_offset + offset_vec
+            
+            # Extract local rotation of component
+            rot = comp.get("rotation", [0.0, 0.0, 0.0])
+            b_rot = mathutils.Euler((rot[0], -rot[2], rot[1]))
+            local_rot_mat = b_rot.to_matrix().to_4x4()
+            
+            for t_mat in target_mats:
+                comp_world_mats.append(t_mat @ mathutils.Matrix.Translation(attach_local) @ local_rot_mat)
+        else:
+            comp_world_mats = [mathutils.Matrix.Identity(4)]
+            
+    else:
+        layout_type = layout.get("type")
+        layout_mats = []
+        
+        if layout_type == "radial_array":
+            count = layout.get("count", 4)
+            radius = layout.get("radius", 1.0)
+            center = layout.get("center", [0.0, 0.0, 0.0])
+            axis = layout.get("axis", "Y")
+            b_center = mathutils.Vector((center[0], -center[2], center[1]))
+            
+            for i in range(count):
+                angle = (2 * math.pi / count) * i
+                if axis == "Y":
+                    loc = mathutils.Vector((radius * math.cos(angle), radius * math.sin(angle), 0.0)) + b_center
+                    rot_mat = mathutils.Euler((0.0, 0.0, angle)).to_matrix().to_4x4()
+                elif axis == "Z":
+                    loc = mathutils.Vector((radius * math.cos(angle), 0.0, radius * math.sin(angle))) + b_center
+                    rot_mat = mathutils.Euler((0.0, angle, 0.0)).to_matrix().to_4x4()
+                else:
+                    loc = mathutils.Vector((0.0, radius * math.cos(angle), radius * math.sin(angle))) + b_center
+                    rot_mat = mathutils.Euler((angle, 0.0, 0.0)).to_matrix().to_4x4()
+                
+                layout_mats.append(mathutils.Matrix.Translation(loc) @ rot_mat)
+                
+        elif layout_type == "linear_array":
+            count = layout.get("count", 4)
+            spacing = layout.get("spacing", [0.2, 0.0, 0.0])
+            start = layout.get("start", [0.0, 0.0, 0.0])
+            
+            b_spacing = mathutils.Vector((spacing[0], -spacing[2], spacing[1]))
+            b_start = mathutils.Vector((start[0], -start[2], start[1]))
+            
+            for i in range(count):
+                offset = b_start + i * b_spacing
+                layout_mats.append(mathutils.Matrix.Translation(offset))
+                
+        elif layout_type == "mirror":
+            axis = layout.get("axis", "X")
+            mirror_scale = mathutils.Vector((1, 1, 1))
+            if axis == "X":
+                mirror_scale[0] = -1
+            elif axis == "Y":
+                mirror_scale[2] = -1
+            else:
+                mirror_scale[1] = -1
+                
+            mirror_mat = mathutils.Matrix.Scale(-1, 4, mirror_scale)
+            layout_mats.append(mathutils.Matrix.Identity(4))
+            layout_mats.append(mirror_mat)
+            
+        else:
+            layout_mats.append(mathutils.Matrix.Identity(4))
+            
+        for p_mat in parent_mats:
+            for l_mat in layout_mats:
+                comp_world_mats.append(p_mat @ l_mat @ local_mat)
+                
     world_matrices[cid] = comp_world_mats
     
     # 5. Render components
