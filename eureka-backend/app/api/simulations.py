@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel, Field
 from app.services.simulation_manager import SimulationManager
 from typing import List, Dict, Any, Tuple
+from app.config import get_settings
+from app.security import require_role
 
 router = APIRouter(prefix="/api/simulations", tags=["simulations"])
 
@@ -16,10 +18,10 @@ class CreateSimulationRequest(BaseModel):
     simulation_type: str = "molecular"
 
 class AddParticleRequest(BaseModel):
-    particle_type: str
-    position: List[float]
-    mass: float = 1.0
-    charge: float = 0.0
+    particle_type: str = Field(max_length=32)
+    position: List[float] = Field(min_length=3, max_length=3)
+    mass: float = Field(default=1.0, gt=0, le=1_000_000)
+    charge: float = Field(default=0.0, ge=-1_000_000, le=1_000_000)
 
 class AddReactionRequest(BaseModel):
     reactants: List[str]
@@ -27,11 +29,11 @@ class AddReactionRequest(BaseModel):
     conditions: Dict[str, Any] = None
 
 class RunSimulationRequest(BaseModel):
-    steps: int = 1000
-    time_step: float = 0.001
+    steps: int = Field(default=1000, ge=1, le=5000)
+    time_step: float = Field(default=0.001, gt=0, le=0.05)
 
 @router.post("/create")
-async def create_simulation(req: CreateSimulationRequest):
+async def create_simulation(req: CreateSimulationRequest, user: dict = Depends(require_role("editor"))):
     """Create new simulation"""
     try:
         sim_id = await sim_manager.create_simulation(
@@ -49,11 +51,15 @@ async def create_simulation(req: CreateSimulationRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/{sim_id}/add-particle")
-async def add_particle(sim_id: str, req: AddParticleRequest):
+async def add_particle(sim_id: str, req: AddParticleRequest, user: dict = Depends(require_role("editor"))):
     """Add particle to simulation"""
     try:
-        if len(req.position) != 3:
-            raise HTTPException(status_code=400, detail="Position must be a 3D coordinate [x, y, z]")
+        settings = get_settings()
+        state = sim_manager.get_simulation_state(sim_id)
+        if "error" in state:
+            raise HTTPException(status_code=404, detail=state["error"])
+        if len(state["simulation"]["particles"]) >= settings.MAX_SIMULATION_PARTICLES:
+            raise HTTPException(status_code=413, detail="Simulation particle limit exceeded")
             
         position_tuple = (req.position[0], req.position[1], req.position[2])
         
@@ -75,7 +81,7 @@ async def add_particle(sim_id: str, req: AddParticleRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/{sim_id}/add-reaction")
-async def add_reaction(sim_id: str, req: AddReactionRequest):
+async def add_reaction(sim_id: str, req: AddReactionRequest, user: dict = Depends(require_role("editor"))):
     """Add reaction to simulation"""
     try:
         success = await sim_manager.add_reaction_to_simulation(
@@ -93,7 +99,11 @@ async def add_reaction(sim_id: str, req: AddReactionRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/{sim_id}/run")
-async def run_simulation(sim_id: str, req: RunSimulationRequest = RunSimulationRequest()):
+async def run_simulation(
+    sim_id: str,
+    req: RunSimulationRequest = RunSimulationRequest(),
+    user: dict = Depends(require_role("editor"))
+):
     """Run simulation"""
     try:
         result = await sim_manager.run_simulation(
@@ -107,7 +117,7 @@ async def run_simulation(sim_id: str, req: RunSimulationRequest = RunSimulationR
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{sim_id}/state")
-async def get_simulation_state(sim_id: str):
+async def get_simulation_state(sim_id: str, user: dict = Depends(require_role("viewer"))):
     """Get simulation state"""
     try:
         state = sim_manager.get_simulation_state(sim_id)
@@ -120,7 +130,7 @@ async def get_simulation_state(sim_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{sim_id}/results")
-async def get_simulation_results(sim_id: str):
+async def get_simulation_results(sim_id: str, user: dict = Depends(require_role("viewer"))):
     """Get simulation results"""
     try:
         results = sim_manager.get_simulation_results(sim_id)
@@ -133,7 +143,7 @@ async def get_simulation_results(sim_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/")
-async def list_simulations():
+async def list_simulations(user: dict = Depends(require_role("viewer"))):
     """List all simulations"""
     return {
         "simulations": list(sim_manager.simulations.values())

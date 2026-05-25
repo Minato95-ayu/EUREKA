@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-assignment, @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Sphere, Html, Edges, Environment, ContactShadows, useGLTF, RoundedBox } from '@react-three/drei'
@@ -8,6 +9,8 @@ import type { Hands as MediaPipeHands, Results } from '@mediapipe/hands'
 import type { Group } from 'three'
 import * as THREE from 'three'
 import './App.css'
+
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 type Tab = 'status' | 'batch' | 'pipeline' | 'research' | 'results'
 type AriaState = 'idle' | 'listening' | 'thinking' | 'speaking'
@@ -278,10 +281,6 @@ function ComponentMesh({
     return { roughness, metalness, transparent, opacity, clearcoat, clearcoatRoughness, usePhysical, ior, transmission, thickness, envMapIntensity }
   }, [component.material, shellMode, isCover])
 
-  if (shellMode === 'hidden' && isCover) {
-    return null
-  }
-
   const material = materialProps.usePhysical ? (
     <meshPhysicalMaterial
       color={component.color}
@@ -347,6 +346,10 @@ function ComponentMesh({
       groupRef.current.rotation.z = rotation[2] + t * rpm
     }
   })
+
+  if (shellMode === 'hidden' && isCover) {
+    return null
+  }
 
   // Helper to get pure primitive geometry for CSG
   const getRawGeometry = (geom: ObjectGeometry) => {
@@ -1156,7 +1159,7 @@ function App() {
 
     try {
       const params = new URLSearchParams({ q: searchText })
-      const generateResponse = await fetch(`http://localhost:8000/api/objects/generate?${params.toString()}`, {
+      const generateResponse = await fetch(`${API_BASE}/api/objects/generate?${params.toString()}`, {
         method: 'POST'
       })
       if (!generateResponse.ok) throw new Error('Generation failed')
@@ -1165,7 +1168,7 @@ function App() {
       setSelectedComponent(objectData.components?.[0] || null)
       setActiveTab('research')
       speak(`Loaded ${objectData.name}. Select a component or ask ARIA what it does.`)
-    } catch (_e) {
+    } catch {
       // Smart dynamic fallback: fetch Wikipedia info and build a unique procedural model
       let wikiTitle = searchText
       let wikiDesc = `A procedurally generated 3D model of ${searchText}.`
@@ -1185,7 +1188,7 @@ function App() {
             if (top?.title) { wikiTitle = top.title; wikiDesc = top.snippet?.replace(/<[^>]+>/g, '') || wikiDesc }
           }
         }
-      } catch (_e) { /* Wikipedia fetch failed - use generic */ }
+      } catch { /* Wikipedia fetch failed - use generic */ }
 
       const q = searchText.toLowerCase()
       const isJetEngine = (q.includes('airplane') || q.includes('aircraft') || q.includes('jet') || q.includes('turbine')) && q.includes('engine')
@@ -1480,14 +1483,14 @@ function App() {
         ? `\n\nSelected object: ${activeObject?.name || 'unknown'}\nSelected component: ${selectedComponent.name}\nFunction: ${selectedComponent.function}\nMaterial: ${selectedComponent.material || 'unknown'}\nRisk if removed: ${selectedComponent.riskIfRemoved || 'unknown'}`
         : ''
       const params = new URLSearchParams({ message: `${command}${context}` })
-      const response = await fetch(`http://localhost:8000/api/agents/process?${params.toString()}`, { method: 'POST' })
+      const response = await fetch(`${API_BASE}/api/agents/process?${params.toString()}`, { method: 'POST' })
       const data = await response.json()
       const reply = data?.result?.unified_response || data?.result?.message || `Command accepted: ${command}`
       speak(String(reply).slice(0, 260))
-    } catch (_e) {
+    } catch {
       speak(`ARIA local mode: ${command}. I updated the lab view and kept the command in session memory.`)
     }
-  }, [activeObject?.name, query, searchObject, selectedComponent, speak])
+  }, [activeObject, query, searchObject, selectedComponent, speak])
 
   const toggleVoice = useCallback(() => {
     if (!SpeechRecognitionCtor) return
@@ -1610,7 +1613,7 @@ function App() {
         if (handsRef.current) requestAnimationFrame(loop)
       }
       requestAnimationFrame(loop)
-    } catch (_e) {
+    } catch {
       setGesture('offline')
       setAriaReply('Camera permission failed. Allow webcam access to use hand commands.')
     }

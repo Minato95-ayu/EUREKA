@@ -10,7 +10,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://eureka:eureka_password@postgres:5432/eureka_db
       - REDIS_URL=redis://redis:6379/0
-      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_HOST=http://ollama:11434
       - LOG_LEVEL=info
       - ENVIRONMENT=production
     depends_on:
@@ -29,10 +29,10 @@ services:
       context: ./eureka-frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:80"
     environment:
-      - REACT_APP_API_URL=http://backend:8000
-      - REACT_APP_WS_URL=ws://backend:8000/ws
+      - VITE_API_URL=
+      - VITE_WS_URL=/ws
     depends_on:
       - backend
     restart: unless-stopped

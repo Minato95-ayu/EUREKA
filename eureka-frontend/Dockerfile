@@ -2,27 +2,31 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* ./
-
-RUN npm install -g pnpm && pnpm install
+COPY package*.json ./
+RUN npm ci
 
 COPY . .
+ARG VITE_API_URL=
+ARG VITE_WS_URL=/ws
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_WS_URL=$VITE_WS_URL
+RUN npm run build
 
-RUN pnpm run build
+FROM nginx:1.27-alpine
 
-# Production stage
-FROM node:22-alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+RUN printf '%s\n' \
+  'server {' \
+  '  listen 80;' \
+  '  server_name _;' \
+  '  root /usr/share/nginx/html;' \
+  '  index index.html;' \
+  '  location / {' \
+  '    try_files $uri $uri/ /index.html;' \
+  '  }' \
+  '}' > /etc/nginx/conf.d/default.conf
 
-WORKDIR /app
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-
-RUN npm install -g pnpm && pnpm install --prod
-
-EXPOSE 3000
+EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:3000/ || exit 1
-
-CMD ["node", "dist/index.js"]
+    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1

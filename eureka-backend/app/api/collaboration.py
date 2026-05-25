@@ -6,6 +6,7 @@ import json
 import logging
 from sqlalchemy import text
 from app.database import db
+from app.security import require_role, verify_websocket_token
 
 from app.services.collaboration_service import CollaborationService, CollaborationRole
 from app.services.analytics_service import AnalyticsService
@@ -47,7 +48,7 @@ class DetectAnomaliesRequest(BaseModel):
 # ============ COLLABORATION ENDPOINTS ============
 
 @router.post("/collaborations/create")
-async def create_collaboration(req: CreateCollaborationRequest):
+async def create_collaboration(req: CreateCollaborationRequest, user: dict = Depends(require_role("editor"))):
     """Create collaboration"""
     try:
         collab_id = await collab_service.create_collaboration(
@@ -64,7 +65,8 @@ async def create_collaboration(req: CreateCollaborationRequest):
 @router.post("/collaborations/{collab_id}/add-member")
 async def add_collaborator(
     collab_id: str,
-    req: AddCollaboratorRequest
+    req: AddCollaboratorRequest,
+    user: dict = Depends(require_role("admin"))
 ):
     """Add collaborator"""
     try:
@@ -81,7 +83,8 @@ async def add_collaborator(
 @router.post("/collaborations/{collab_id}/comment")
 async def add_comment(
     collab_id: str,
-    req: AddCommentRequest
+    req: AddCommentRequest,
+    user: dict = Depends(require_role("viewer"))
 ):
     """Add comment"""
     try:
@@ -99,7 +102,7 @@ async def add_comment(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/collaborations/{collab_id}")
-async def get_collaboration(collab_id: str):
+async def get_collaboration(collab_id: str, user: dict = Depends(require_role("viewer"))):
     """Get collaboration state"""
     try:
         state = await collab_service.get_collaboration_state(collab_id)
@@ -115,7 +118,7 @@ async def get_collaboration(collab_id: str):
 # ============ ANALYTICS ENDPOINTS ============
 
 @router.post("/analytics/compare")
-async def compare_experiments(req: CompareExperimentsRequest):
+async def compare_experiments(req: CompareExperimentsRequest, user: dict = Depends(require_role("viewer"))):
     """Compare experiments"""
     try:
         comparison = await analytics_service.compare_experiments(req.experiment_ids)
@@ -127,7 +130,8 @@ async def compare_experiments(req: CompareExperimentsRequest):
 @router.post("/analytics/{exp_id}/anomalies")
 async def detect_anomalies(
     exp_id: str,
-    req: DetectAnomaliesRequest
+    req: DetectAnomaliesRequest,
+    user: dict = Depends(require_role("viewer"))
 ):
     """Detect anomalies"""
     try:
@@ -138,7 +142,7 @@ async def detect_anomalies(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/analytics/{exp_id}/trends")
-async def analyze_trends(exp_id: str):
+async def analyze_trends(exp_id: str, user: dict = Depends(require_role("viewer"))):
     """Analyze trends"""
     try:
         trends = await analytics_service.trend_analysis(exp_id)
@@ -195,7 +199,7 @@ async def _fetch_experiment_data(exp_id: str) -> Dict[str, Any]:
     return experiment
 
 @router.get("/experiments/{exp_id}/export/json")
-async def export_json(exp_id: str):
+async def export_json(exp_id: str, user: dict = Depends(require_role("admin"))):
     """Export as JSON"""
     try:
         experiment = await _fetch_experiment_data(exp_id)
@@ -206,7 +210,7 @@ async def export_json(exp_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/experiments/{exp_id}/export/csv")
-async def export_csv(exp_id: str):
+async def export_csv(exp_id: str, user: dict = Depends(require_role("admin"))):
     """Export as CSV"""
     try:
         experiment = await _fetch_experiment_data(exp_id)
@@ -217,7 +221,7 @@ async def export_csv(exp_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/experiments/{exp_id}/doi")
-async def generate_doi(exp_id: str):
+async def generate_doi(exp_id: str, user: dict = Depends(require_role("admin"))):
     """Generate DOI"""
     try:
         doi = await export_service.generate_doi(exp_id)
@@ -231,6 +235,7 @@ async def generate_doi(exp_id: str):
 @router.websocket("/ws/collaboration/{collab_id}")
 async def websocket_collaboration(websocket: WebSocket, collab_id: str):
     """WebSocket for real-time collaboration"""
+    verify_websocket_token(websocket, "viewer")
     await collab_manager.connect(websocket, collab_id)
     try:
         while True:
