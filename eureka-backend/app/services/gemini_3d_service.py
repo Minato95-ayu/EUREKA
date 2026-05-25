@@ -128,10 +128,10 @@ class Gemini3DService:
             import google.generativeai as genai  # type: ignore
             genai.configure(api_key=self.api_key)
             self._model = genai.GenerativeModel(
-                "gemini-1.5-flash",
+                "gemini-3.5-flash",
                 generation_config={"temperature": 0.4, "max_output_tokens": 2048},
             )
-            logger.info("Gemini 3D service initialised (gemini-1.5-flash).")
+            logger.info("Gemini 3D service initialised (gemini-3.5-flash).")
             return True
         except ImportError:
             logger.error("google-generativeai package not installed. Run: pip install google-generativeai")
