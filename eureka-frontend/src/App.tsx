@@ -154,7 +154,9 @@ function ComponentMesh({
   explodeFactor,
   shellMode,
   showLabels,
-  isAnimating
+  isAnimating,
+  selectedComponentId,
+  allComponents
 }: {
   component: ObjectComponent
   selected: boolean
@@ -163,6 +165,8 @@ function ComponentMesh({
   shellMode: 'solid' | 'transparent' | 'hidden'
   showLabels: boolean
   isAnimating: boolean
+  selectedComponentId?: string
+  allComponents?: ObjectComponent[]
 }) {
   const geometry = component.geometry
   const rotation = geometry.rotation || [0, 0, 0]
@@ -284,8 +288,8 @@ function ComponentMesh({
   const material = materialProps.usePhysical ? (
     <meshPhysicalMaterial
       color={component.color}
-      emissive={selected ? '#1a7a85' : '#050a0c'}
-      emissiveIntensity={selected ? 0.6 : 0.15}
+      emissive={selected ? '#00ffff' : '#050a0c'}
+      emissiveIntensity={selected ? 0.8 : 0.15}
       roughness={materialProps.roughness}
       metalness={materialProps.metalness}
       transparent={materialProps.transparent}
@@ -300,8 +304,8 @@ function ComponentMesh({
   ) : (
     <meshStandardMaterial
       color={component.color}
-      emissive={selected ? '#1a7a85' : '#050a0c'}
-      emissiveIntensity={selected ? 0.5 : 0.1}
+      emissive={selected ? '#00ffff' : '#050a0c'}
+      emissiveIntensity={selected ? 0.7 : 0.1}
       roughness={materialProps.roughness}
       metalness={materialProps.metalness}
       transparent={materialProps.transparent}
@@ -310,8 +314,24 @@ function ComponentMesh({
     />
   )
 
-  const handlePointerDown = (event: { stopPropagation: () => void }) => {
+  const handlePointerDown = (event: any) => {
     event.stopPropagation()
+    
+    // Check if we clicked a submesh of a compiled GLTF model
+    if (geometry.type === 'gltf' && event.intersection?.object?.name && allComponents) {
+      const meshName = event.intersection.object.name
+      const matchedComp = allComponents.find(comp => 
+        meshName === comp.id || 
+        meshName.startsWith(`${comp.id}_`) || 
+        meshName.startsWith(`${comp.id}.`) ||
+        meshName.includes(`_${comp.id}_`)
+      )
+      if (matchedComp) {
+        onSelect(matchedComp)
+        return
+      }
+    }
+    
     onSelect(component)
   }
 
@@ -429,7 +449,12 @@ function ComponentMesh({
   } else if (geometry.type === 'gltf' && geometry.url) {
     innerContent = (
       <>
-        <GltfModelWrapper url={geometry.url} materialProps={materialProps} selected={selected} />
+        <GltfModelWrapper 
+          url={geometry.url} 
+          materialProps={materialProps} 
+          selected={selected} 
+          selectedComponentId={selectedComponentId} 
+        />
         {showLabels && (
           <Html position={[0, 0.5, 0]} center>
             <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
@@ -545,7 +570,17 @@ function ComponentMesh({
   )
 }
 
-function GltfModelWrapper({ url, materialProps, selected }: { url: string, materialProps: any, selected: boolean }) {
+function GltfModelWrapper({ 
+  url, 
+  materialProps, 
+  selected, 
+  selectedComponentId 
+}: { 
+  url: string, 
+  materialProps: any, 
+  selected: boolean,
+  selectedComponentId?: string 
+}) {
   const { scene } = useGLTF(url)
   const clonedScene = useMemo(() => {
     const clone = scene.clone()
@@ -563,17 +598,26 @@ function GltfModelWrapper({ url, materialProps, selected }: { url: string, mater
             child.material.metalness = materialProps.metalness
           }
           
-          if (selected) {
-            child.material.emissive.set('#145b63')
-            child.material.emissiveIntensity = 0.5
+          const meshName = child.name || ''
+          const isThisMeshSelected = selected || (selectedComponentId && (
+            meshName === selectedComponentId || 
+            meshName.startsWith(`${selectedComponentId}_`) || 
+            meshName.startsWith(`${selectedComponentId}.`) ||
+            meshName.includes(`_${selectedComponentId}_`)
+          ))
+          
+          if (isThisMeshSelected) {
+            child.material.emissive.set('#00ffff')
+            child.material.emissiveIntensity = 0.8
           } else {
             child.material.emissive.setHex(0x000000)
+            child.material.emissiveIntensity = 0.0
           }
         }
       }
     })
     return clone
-  }, [scene, materialProps, selected])
+  }, [scene, materialProps, selected, selectedComponentId])
   return <primitive object={clonedScene} />
 }
 
@@ -662,6 +706,8 @@ function LabScene({
               shellMode={shellMode}
               showLabels={showLabels}
               isAnimating={isAnimating}
+              selectedComponentId={selectedComponent?.id}
+              allComponents={activeObject.components}
             />
           ))
         ) : (

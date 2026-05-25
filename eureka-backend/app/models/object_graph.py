@@ -35,6 +35,7 @@ class ObjectComponent(BaseModel):
     position: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0])
     color: str = "#5ec8d8"
     geometry: dict[str, Any] = Field(default_factory=dict)
+    layout: dict[str, Any] | None = None
     children: list[str] = Field(default_factory=list)
     micro_levels: list[MicroLevel] = Field(default_factory=list, alias="microLevels")
     simulation_properties: SimulationProperties | None = Field(default=None, alias="simulationProperties")
