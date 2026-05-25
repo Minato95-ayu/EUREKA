@@ -10,6 +10,28 @@ from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
+def topological_sort(components: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    sorted_comps = []
+    visited = set()
+    comp_dict = {c["id"]: c for c in components if c.get("id")}
+    
+    def visit(cid):
+        if cid in visited:
+            return
+        visited.add(cid)
+        comp = comp_dict.get(cid)
+        if not comp:
+            return
+        pid = comp.get("parentId")
+        if pid and pid in comp_dict:
+            visit(pid)
+        sorted_comps.append(comp)
+        
+    for comp in components:
+        if comp.get("id"):
+            visit(comp["id"])
+    return sorted_comps
+
 class BlenderService:
     """
     Compiles structural component specs into high-fidelity 3D GLB models 
@@ -105,13 +127,20 @@ class BlenderService:
                 except Exception:
                     pass
 
+
     def _generate_blender_script(self, components: List[Dict[str, Any]], output_filepath: str) -> str:
         """Generates the Python script for Blender to construct the 3D scene."""
         escaped_filepath = output_filepath.replace("\\", "\\\\")
         
-        # Start script with imports and cleanup
+        # Sort components topologically (parents before children)
+        sorted_comps = topological_sort(components)
+        comp_json_str = json.dumps(sorted_comps)
+        
+        # Start script with imports and helpers
         script = f"""import bpy
 import math
+import mathutils
+import json
 
 # Clear default objects
 if bpy.ops.object.select_all:
@@ -145,7 +174,6 @@ def create_pbr_material(name, hex_color, material_type=""):
             bsdf.inputs['Metallic'].default_value = 0.0
             bsdf.inputs['Roughness'].default_value = 0.05
             bsdf.inputs['Transmission'].default_value = 0.9
-            # Enable blending for transparent export
             mat.blend_method = 'BLEND'
         elif any(x in mat_lower for x in ["rubber", "belt"]):
             bsdf.inputs['Metallic'].default_value = 0.0
@@ -156,15 +184,13 @@ def create_pbr_material(name, hex_color, material_type=""):
             
     return mat
 
-def apply_transforms(obj, pos, rot):
-    # Set position (ThreeJS Y-up to Blender Z-up)
-    # Three.js: X (right), Y (up), Z (forward)
-    # Blender: X (right), Y (forward), Z (up)
-    # Mapping coordinates:
-    obj.location = (pos[0], -pos[2], pos[1])
-    
-    # Set rotation
-    obj.rotation_euler = (rot[0], -rot[2], rot[1])
+def make_blender_matrix(pos, rot):
+    # Convert position (ThreeJS Y-up to Blender Z-up)
+    # ThreeJS (x, y, z) -> Blender (x, -z, y)
+    b_pos = mathutils.Vector((pos[0], -pos[2], pos[1]))
+    # Convert rotation (Euler)
+    b_rot = mathutils.Euler((rot[0], -rot[2], rot[1]))
+    return mathutils.Matrix.Translation(b_pos) @ b_rot.to_matrix().to_4x4()
 
 def add_primitive(gtype, geom_data, name="part"):
     obj = None
@@ -177,11 +203,8 @@ def add_primitive(gtype, geom_data, name="part"):
     elif gtype == "cylinder" or gtype == "capsule":
         r = geom_data.get("radius", 0.5)
         d = geom_data.get("depth", 1.0)
-        # Default Blender cylinder is aligned along Z. We rotate it to Y-up inside its frame
         bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=d, vertices=32)
         obj = bpy.context.active_object
-        # Align to Y-up like ThreeJS
-        obj.rotation_euler = (1.5708, 0, 0)
         
     elif gtype == "sphere":
         r = geom_data.get("radius", 0.5)
@@ -193,8 +216,6 @@ def add_primitive(gtype, geom_data, name="part"):
         d = geom_data.get("depth", 1.0)
         bpy.ops.mesh.primitive_cone_add(radius1=r, radius2=0.0, depth=d)
         obj = bpy.context.active_object
-        # Align to Y-up
-        obj.rotation_euler = (1.5708, 0, 0)
         
     elif gtype == "torus":
         r = geom_data.get("radius", 0.5)
@@ -204,31 +225,23 @@ def add_primitive(gtype, geom_data, name="part"):
         
     elif gtype == "hemisphere":
         r = geom_data.get("radius", 0.5)
-        # Blender doesn't have a hemisphere primitive. We add a sphere and bisect/delete half
         bpy.ops.mesh.primitive_uv_sphere_add(radius=r)
         obj = bpy.context.active_object
-        # Rotate to align hemisphere cap
-        obj.rotation_euler = (1.5708, 0, 0)
         
     elif gtype == "fan":
         r = geom_data.get("radius", 0.5)
         blades = geom_data.get("blades", 6)
-        # Combine central cylinder hub + array of blades
         bpy.ops.mesh.primitive_cylinder_add(radius=r * 0.25, depth=0.1, vertices=16)
         hub = bpy.context.active_object
-        hub.rotation_euler = (1.5708, 0, 0)
         
-        # Create blade elements and join them
         for i in range(blades):
             angle = (2 * math.pi / blades) * i
             bpy.ops.mesh.primitive_cube_add(size=1.0)
             blade = bpy.context.active_object
             blade.scale = (r * 0.9, 0.05, 0.02)
-            # Center offset & rotate blade
             blade.location = (r * 0.45 * math.cos(angle), 0, r * 0.45 * math.sin(angle))
-            blade.rotation_euler = (0, angle, 0.1) # Tilt blade for aero appearance
+            blade.rotation_euler = (0, angle, 0.1)
             
-            # Join blade to hub
             blade.select_set(True)
             hub.select_set(True)
             bpy.context.view_layer.objects.active = hub
@@ -238,88 +251,146 @@ def add_primitive(gtype, geom_data, name="part"):
     elif gtype == "lathe":
         r = geom_data.get("radius", 0.5)
         d = geom_data.get("depth", 0.3)
-        # Simple pulley/wheel proxy using a cylinder with a groove (mocked as box subtraction)
         bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=d)
         obj = bpy.context.active_object
-        obj.rotation_euler = (1.5708, 0, 0)
         
+    elif gtype == "csg":
+        base_geom = geom_data.get("base", {{"type": "box"}})
+        subtractions = geom_data.get("subtractions", [])
+        base_obj = add_primitive(base_geom.get("type", "box"), base_geom, f"{{name}}_base")
+        if base_obj:
+            for idx, sub in enumerate(subtractions):
+                sub_type = sub.get("type", "cylinder")
+                sub_pos = sub.get("position", [0.0, 0.0, 0.0])
+                sub_rot = sub.get("rotation", [0.0, 0.0, 0.0])
+                
+                cut_obj = add_primitive(sub_type, sub, f"{{name}}_cut_{{idx}}")
+                if cut_obj:
+                    cut_pos = mathutils.Vector((sub_pos[0], -sub_pos[2], sub_pos[1]))
+                    cut_rot = mathutils.Euler((sub_rot[0], -sub_rot[2], sub_rot[1]))
+                    cut_align = mathutils.Matrix.Identity(4)
+                    if sub_type in ["cylinder", "capsule", "cone", "hemisphere", "fan", "lathe"]:
+                        cut_align = mathutils.Euler((1.5708, 0, 0)).to_matrix().to_4x4()
+                    
+                    cut_obj.matrix_world = mathutils.Matrix.Translation(cut_pos) @ cut_rot.to_matrix().to_4x4() @ cut_align
+                    
+                    bool_mod = base_obj.modifiers.new(name=f"bool_{{idx}}", type='BOOLEAN')
+                    bool_mod.operation = 'DIFFERENCE'
+                    bool_mod.object = cut_obj
+                    
+                    bpy.context.view_layer.objects.active = base_obj
+                    bpy.ops.object.modifier_apply(modifier=f"bool_{{idx}}")
+                    bpy.data.objects.remove(cut_obj, do_unlink=True)
+            obj = base_obj
+            
     if obj:
         obj.name = name
     return obj
-"""
-        
-        # Loop through components and generate python construction logic
-        for comp in components:
-            cid = comp.get("id")
-            cname = comp.get("name", cid)
-            pos = comp.get("position", [0.0, 0.0, 0.0])
-            rot = comp.get("rotation", [0.0, 0.0, 0.0])
-            color = comp.get("color", "#c0c5ce")
-            material = comp.get("material", "Steel")
-            geometry = comp.get("geometry", {})
-            gtype = geometry.get("type", "box")
-            
-            # Skip parent children link logic since Blender handles absolute positions
-            script += f"""
-# --- Add Component: {cname} ({cid}) ---
-try:
-    mat_{cid} = create_pbr_material("mat_{cid}", "{color}", "{material}")
-"""
-            
-            # CSG Boolean Subtractions Handling
-            if gtype == "csg":
-                base_geom = geometry.get("base", {"type": "box"})
-                subtractions = geometry.get("subtractions", [])
-                
-                script += f"""
-    # CSG Base
-    base_obj = add_primitive("{base_geom.get('type', 'box')}", {json.dumps(base_geom)}, "{cid}_base")
-    if base_obj:
-        base_obj.data.materials.append(mat_{cid})
-        
-        # Subtractions
-"""
-                for idx, sub in enumerate(subtractions):
-                    sub_pos = sub.get("position", [0.0, 0.0, 0.0])
-                    sub_rot = sub.get("rotation", [0.0, 0.0, 0.0])
-                    script += f"""
-        # Cut {idx}
-        cut_obj = add_primitive("{sub.get('type')}", {json.dumps(sub)}, "{cid}_cut_{idx}")
-        if cut_obj:
-            apply_transforms(cut_obj, {sub_pos}, {sub_rot})
-            
-            # Add modifier to base
-            bool_mod = base_obj.modifiers.new(name="bool_{idx}", type='BOOLEAN')
-            bool_mod.operation = 'DIFFERENCE'
-            bool_mod.object = cut_obj
-            
-            # Apply Boolean modifier
-            bpy.context.view_layer.objects.active = base_obj
-            bpy.ops.object.modifier_apply(modifier="bool_{idx}")
-            
-            # Remove cutting mesh
-            bpy.data.objects.remove(cut_obj, do_unlink=True)
-"""
-                # Transform the final compound CSG object
-                script += f"""
-        apply_transforms(base_obj, {pos}, {rot})
-"""
-                
-            else:
-                # Standard Primitives
-                script += f"""
-    obj = add_primitive("{gtype}", {json.dumps(geometry)}, "{cid}")
-    if obj:
-        obj.data.materials.append(mat_{cid})
-        apply_transforms(obj, {pos}, {rot})
-"""
-            script += """
-except Exception as e:
-    print(f"Error constructing component {cid}: {e}")
-"""
 
-        # Export scene to GLB
-        script += f"""
+# Components definitions JSON
+components_data = json.loads(r'''{comp_json_str}''')
+
+world_matrices = {{}}
+
+for comp in components_data:
+    cid = comp["id"]
+    pid = comp.get("parentId")
+    
+    # 1. Parent matrices
+    if not pid or pid not in world_matrices:
+        parent_mats = [mathutils.Matrix.Identity(4)]
+    else:
+        parent_mats = world_matrices[pid]
+        
+    # 2. Local matrix
+    pos = comp.get("position", [0.0, 0.0, 0.0])
+    rot = comp.get("rotation", [0.0, 0.0, 0.0])
+    local_mat = make_blender_matrix(pos, rot)
+    
+    # 3. Layout Arrays
+    layout = comp.get("layout", {{}})
+    layout_type = layout.get("type")
+    
+    layout_mats = []
+    if layout_type == "radial_array":
+        count = layout.get("count", 4)
+        radius = layout.get("radius", 1.0)
+        center = layout.get("center", [0.0, 0.0, 0.0])
+        axis = layout.get("axis", "Y") # Default to vertical Y rotation in ThreeJS
+        b_center = mathutils.Vector((center[0], -center[2], center[1]))
+        
+        for i in range(count):
+            angle = (2 * math.pi / count) * i
+            if axis == "Y": # vertical axis in ThreeJS -> Z axis in Blender
+                loc = mathutils.Vector((radius * math.cos(angle), radius * math.sin(angle), 0.0)) + b_center
+                rot_mat = mathutils.Euler((0.0, 0.0, angle)).to_matrix().to_4x4()
+            elif axis == "Z": # depth axis in ThreeJS -> Y axis in Blender
+                loc = mathutils.Vector((radius * math.cos(angle), 0.0, radius * math.sin(angle))) + b_center
+                rot_mat = mathutils.Euler((0.0, angle, 0.0)).to_matrix().to_4x4()
+            else: # X axis
+                loc = mathutils.Vector((0.0, radius * math.cos(angle), radius * math.sin(angle))) + b_center
+                rot_mat = mathutils.Euler((angle, 0.0, 0.0)).to_matrix().to_4x4()
+            
+            layout_mats.append(mathutils.Matrix.Translation(loc) @ rot_mat)
+            
+    elif layout_type == "linear_array":
+        count = layout.get("count", 4)
+        spacing = layout.get("spacing", [0.2, 0.0, 0.0])
+        start = layout.get("start", [0.0, 0.0, 0.0])
+        
+        b_spacing = mathutils.Vector((spacing[0], -spacing[2], spacing[1]))
+        b_start = mathutils.Vector((start[0], -start[2], start[1]))
+        
+        for i in range(count):
+            offset = b_start + i * b_spacing
+            layout_mats.append(mathutils.Matrix.Translation(offset))
+            
+    elif layout_type == "mirror":
+        axis = layout.get("axis", "X")
+        mirror_scale = mathutils.Vector((1, 1, 1))
+        if axis == "X":
+            mirror_scale[0] = -1
+        elif axis == "Y":
+            mirror_scale[2] = -1 # ThreeJS Y is Blender Z
+        else: # "Z"
+            mirror_scale[1] = -1 # ThreeJS Z is Blender -Y
+            
+        mirror_mat = mathutils.Matrix.Scale(-1, 4, mirror_scale)
+        layout_mats.append(mathutils.Matrix.Identity(4))
+        layout_mats.append(mirror_mat)
+        
+    else:
+        layout_mats.append(mathutils.Matrix.Identity(4))
+        
+    # 4. Multiply parent & layout matrices
+    comp_world_mats = []
+    for p_mat in parent_mats:
+        for l_mat in layout_mats:
+            comp_world_mats.append(p_mat @ l_mat @ local_mat)
+            
+    world_matrices[cid] = comp_world_mats
+    
+    # 5. Render components
+    geometry = comp.get("geometry", {{}})
+    gtype = geometry.get("type", "box")
+    
+    if gtype == "empty" or gtype == "none":
+        continue
+        
+    color = comp.get("color", "#c0c5ce")
+    material_name = comp.get("material", "Steel")
+    mat = create_pbr_material(f"mat_{{cid}}", color, material_name)
+    
+    align_mat = mathutils.Matrix.Identity(4)
+    if gtype in ["cylinder", "capsule", "cone", "hemisphere", "fan", "lathe"]:
+        align_mat = mathutils.Euler((1.5708, 0, 0)).to_matrix().to_4x4()
+        
+    for idx, w_mat in enumerate(comp_world_mats):
+        obj = add_primitive(gtype, geometry, f"{{cid}}_{{idx}}")
+        if obj:
+            obj.matrix_world = w_mat @ align_mat
+            obj.data.materials.append(mat)
+
 # Export scene to GLB
 try:
     print("Exporting GLB scene...")
