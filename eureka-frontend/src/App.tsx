@@ -351,6 +351,16 @@ function ComponentMesh({
     return null
   }
 
+  if (geometry.type === 'empty' || geometry.type === 'none') {
+    return showLabels ? (
+      <group position={displacedPos} onPointerDown={handlePointerDown}>
+        <Html position={[0, 0, 0]} center>
+          <span className={selected ? 'component-label selected' : 'component-label'}>{component.name}</span>
+        </Html>
+      </group>
+    ) : null
+  }
+
   // Helper to get pure primitive geometry for CSG
   const getRawGeometry = (geom: ObjectGeometry) => {
     if (geom.type === 'box') return <boxGeometry args={geom.size || [1, 1, 1]} />

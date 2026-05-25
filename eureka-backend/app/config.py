@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 120
     
     # CORS settings
+    
+    # CORS settings
     ALLOWED_ORIGINS: list = [
         "http://localhost:3000",
         "http://localhost:5173",
@@ -49,6 +51,10 @@ class Settings(BaseSettings):
     
     # Gemini API settings
     GEMINI_API_KEY: str = ""
+
+    # Blender settings
+    BLENDER_PATH: str = "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe"
+    GLB_CACHE_DIR: str = "app/data/generated_glb"
 
     @field_validator("DEBUG", mode="before")
     @classmethod
