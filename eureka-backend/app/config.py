@@ -32,6 +32,9 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "https://eureka.io"
     ]
+    
+    # Gemini API settings
+    GEMINI_API_KEY: str = ""
 
     @field_validator("DEBUG", mode="before")
     @classmethod
@@ -49,6 +52,7 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 @lru_cache()
 def get_settings():
