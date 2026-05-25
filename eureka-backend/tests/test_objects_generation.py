@@ -41,12 +41,12 @@ def test_fallback_presets():
     # Drone
     drone = agent.generate_fallback_object("quadcopter")
     assert drone.id == "drone"
-    assert len(drone.components) == 13  # Chassis + 4 arms + 4 motors + 4 props
+    assert len(drone.components) == 4  # Chassis + arm + motor + propeller (with layout operators)
     
     # Engine
     engine = agent.generate_fallback_object("car engine")
     assert engine.id == "car_engine"
-    assert len(engine.components) == 27  # Exhaustive components preset
+    assert len(engine.components) == 21  # Engine preset with layout operators
     
     # Microscope
     scope = agent.generate_fallback_object("microscope")
@@ -122,7 +122,7 @@ async def test_successful_llm_generation_with_caching(tmp_path):
         ]
     }))
     
-    agent = ObjectArchitectAgent(mock_ollama)
+    agent = ObjectArchitectAgent(mock_ollama, library_dir=tmp_path)
     # Redirect cache dir to tmp_path
     agent.cache_dir = tmp_path
     

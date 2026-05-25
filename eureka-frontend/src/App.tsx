@@ -18,7 +18,7 @@ type GestureState = 'offline' | 'ready' | 'zoom-in' | 'zoom-out' | 'point' | 'fi
 type ScaleLevel = 'object' | 'component' | 'subcomponent' | 'material' | 'molecule' | 'atom'
 
 type ObjectGeometry = {
-  type: 'box' | 'cylinder' | 'capsule' | 'fan' | 'gltf' | 'sphere' | 'cone' | 'torus' | 'hemisphere' | 'rounded_box' | 'lathe' | 'csg'
+  type: 'box' | 'cylinder' | 'capsule' | 'fan' | 'gltf' | 'sphere' | 'cone' | 'torus' | 'hemisphere' | 'rounded_box' | 'lathe' | 'csg' | 'empty' | 'none'
   size?: [number, number, number]
   radius?: number
   depth?: number

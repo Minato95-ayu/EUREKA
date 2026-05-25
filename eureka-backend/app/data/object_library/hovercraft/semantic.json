@@ -1,0 +1,32 @@
+[
+  {
+    "id": "hull",
+    "name": "Main Hull",
+    "parentId": null,
+    "scaleLevel": "component",
+    "function": "Main chassis",
+    "material": null,
+    "riskIfRemoved": null,
+    "position": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "color": "#333333",
+    "geometry": {
+      "type": "box",
+      "size": [
+        3.0,
+        1.0,
+        2.0
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 500.0,
+      "heatGeneration": 0.1,
+      "energyConsumption": 0.2
+    }
+  }
+]

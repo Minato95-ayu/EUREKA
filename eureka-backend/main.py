@@ -14,6 +14,7 @@ from app.api.simulations import router as simulations_router, sim_manager
 from app.api.collaboration import router as collaboration_router
 from app.api.health import router as health_router
 from app.api.objects import router as objects_router
+from app.api.experiments import router as experiments_router
 from app.websocket.simulation_stream import SimulationStreamManager
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,7 @@ app.include_router(simulations_router)
 app.include_router(collaboration_router)
 app.include_router(health_router)
 app.include_router(objects_router)
+app.include_router(experiments_router)
 
 settings = get_settings()
 app.add_middleware(

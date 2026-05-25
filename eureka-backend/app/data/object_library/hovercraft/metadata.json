@@ -1,0 +1,7 @@
+{
+  "id": "hovercraft",
+  "name": "Sci-Fi Hovercraft",
+  "type": "mechanical_system",
+  "summary": "An LLM generated hovercraft.",
+  "defaultView": "assembled"
+}
