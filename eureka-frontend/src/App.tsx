@@ -165,6 +165,7 @@ function ComponentMesh({
   shellMode: 'solid' | 'transparent' | 'hidden'
   showLabels: boolean
   isAnimating: boolean
+  viewMode: 'realistic' | 'heatmap'
   selectedComponentId?: string
   allComponents?: ObjectComponent[]
 }) {
@@ -285,11 +286,23 @@ function ComponentMesh({
     return { roughness, metalness, transparent, opacity, clearcoat, clearcoatRoughness, usePhysical, ior, transmission, thickness, envMapIntensity }
   }, [component.material, shellMode, isCover])
 
+  // Heatmap calculation
+  const heat = component.simulationProperties?.heatGeneration || 0
+  const isHeatmap = viewMode === 'heatmap'
+  const heatColor = useMemo(() => {
+    const color = new THREE.Color()
+    if (isHeatmap) {
+      // 0.65 (blue) to 0.0 (red)
+      color.setHSL((1 - heat) * 0.65, 1.0, 0.5)
+    }
+    return color
+  }, [heat, isHeatmap])
+
   const material = materialProps.usePhysical ? (
     <meshPhysicalMaterial
-      color={component.color}
-      emissive={selected ? '#00ffff' : '#050a0c'}
-      emissiveIntensity={selected ? 0.8 : 0.15}
+      color={isHeatmap ? '#111111' : component.color}
+      emissive={selected ? '#00ffff' : (isHeatmap ? heatColor : '#050a0c')}
+      emissiveIntensity={selected ? 0.8 : (isHeatmap ? 1.5 : 0.15)}
       roughness={materialProps.roughness}
       metalness={materialProps.metalness}
       transparent={materialProps.transparent}
@@ -299,18 +312,18 @@ function ComponentMesh({
       ior={materialProps.ior}
       transmission={materialProps.transmission}
       thickness={materialProps.thickness}
-      envMapIntensity={materialProps.envMapIntensity}
+      envMapIntensity={isHeatmap ? 0 : materialProps.envMapIntensity}
     />
   ) : (
     <meshStandardMaterial
-      color={component.color}
-      emissive={selected ? '#00ffff' : '#050a0c'}
-      emissiveIntensity={selected ? 0.7 : 0.1}
+      color={isHeatmap ? '#111111' : component.color}
+      emissive={selected ? '#00ffff' : (isHeatmap ? heatColor : '#050a0c')}
+      emissiveIntensity={selected ? 0.7 : (isHeatmap ? 1.5 : 0.1)}
       roughness={materialProps.roughness}
       metalness={materialProps.metalness}
       transparent={materialProps.transparent}
       opacity={materialProps.opacity}
-      envMapIntensity={materialProps.envMapIntensity}
+      envMapIntensity={isHeatmap ? 0 : materialProps.envMapIntensity}
     />
   )
 
@@ -641,6 +654,7 @@ function LabScene({
   shellMode: 'solid' | 'transparent' | 'hidden'
   showLabels: boolean
   isAnimating: boolean
+  viewMode: 'realistic' | 'heatmap'
 }) {
   const group = useRef<Group>(null)
 
@@ -660,6 +674,11 @@ function LabScene({
   return (
     <>
       {/* === PHOTOREALISTIC LIGHTING SETUP === */}
+      {viewMode === 'realistic' && <Environment preset="studio" blur={0.5} />}
+      <EffectComposer disableNormalPass>
+        <Bloom luminanceThreshold={0.6} mipmapBlur intensity={1.2} />
+      </EffectComposer>
+
       {/* Subtle ambient fill so nothing is pure black */}
       <ambientLight intensity={0.08} />
 
@@ -706,6 +725,7 @@ function LabScene({
               shellMode={shellMode}
               showLabels={showLabels}
               isAnimating={isAnimating}
+              viewMode={viewMode}
               selectedComponentId={selectedComponent?.id}
               allComponents={activeObject.components}
             />
@@ -1041,6 +1061,7 @@ function ResearchScreen({
                 shellMode={shellMode}
                 showLabels={showLabels}
                 isAnimating={isAnimating}
+                viewMode={viewMode}
               />
             </Suspense>
           </Canvas>
@@ -1080,6 +1101,24 @@ function ResearchScreen({
                   onClick={() => setShellMode('hidden')}
                 >
                   Hidden
+                </button>
+              </div>
+            </div>
+
+            <div className="control-group">
+              <label>Scientific Overlays</label>
+              <div className="btn-toggle-group">
+                <button
+                  className={viewMode === 'realistic' ? 'active' : ''}
+                  onClick={() => setViewMode('realistic')}
+                >
+                  Realistic
+                </button>
+                <button
+                  className={viewMode === 'heatmap' ? 'active' : ''}
+                  onClick={() => setViewMode('heatmap')}
+                >
+                  Heat Map
                 </button>
               </div>
             </div>
@@ -1177,6 +1216,7 @@ function App() {
   const [shellMode, setShellMode] = useState<'solid' | 'transparent' | 'hidden'>('solid')
   const [showLabels, setShowLabels] = useState(true)
   const [isAnimating, setIsAnimating] = useState(true)
+  const [viewMode, setViewMode] = useState<'realistic' | 'heatmap'>('realistic')
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -1441,6 +1481,205 @@ function App() {
             position: [0, -1.2, 0],
             color: "#7f8c8d",
             geometry: { type: "box", size: [2.4, 0.2, 1.2] } as any,
+            children: [],
+            microLevels: []
+          }
+        ]
+      } else if (isCarEngine) {
+        fallbackComponents = [
+          {
+            id: `${oid}_engine_block`,
+            name: "Engine Block",
+            parentId: null,
+            scaleLevel: "component",
+            function: "Main structural shell in which all other components like cylinders and pistons are accommodated.",
+            material: "Cast Iron / Aluminum Alloy",
+            riskIfRemoved: "Total collapse of the engine structure.",
+            position: [0, 0, 0],
+            color: "#5c5c5c",
+            geometry: { type: "box", size: [1.6, 0.8, 1.0] } as any,
+            children: [`${oid}_cylinder_head`, `${oid}_oil_pan`, `${oid}_crankshaft`, `${oid}_cylinders`, `${oid}_water_pump`],
+            microLevels: []
+          },
+          {
+            id: `${oid}_cylinder_head`,
+            name: "Cylinder Head",
+            parentId: `${oid}_engine_block`,
+            scaleLevel: "subcomponent",
+            function: "Covers the engine block from the top and seals the cylinders, housing valves and spark plugs.",
+            material: "Aluminum Alloy",
+            riskIfRemoved: "Loss of compression; combustion gases will escape, rendering the engine useless.",
+            position: [0, 0.5, 0],
+            color: "#c0c5ce",
+            geometry: { type: "box", size: [1.6, 0.2, 0.9] } as any,
+            children: [`${oid}_camshaft`, `${oid}_valves`, `${oid}_spark_plugs`, `${oid}_fuel_injectors`, `${oid}_exhaust_manifold`],
+            microLevels: []
+          },
+          {
+            id: `${oid}_oil_pan`,
+            name: "Oil Pan",
+            parentId: `${oid}_engine_block`,
+            scaleLevel: "subcomponent",
+            function: "Reservoir for engine oil at the bottom of the engine, part of the lubrication system.",
+            material: "Stamped Steel / Aluminum",
+            riskIfRemoved: "Total loss of engine oil, leading to catastrophic friction and engine seizure.",
+            position: [0, -0.5, 0],
+            color: "#2c3e50",
+            geometry: { type: "box", size: [1.5, 0.2, 0.9] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_crankshaft`,
+            name: "Crankshaft",
+            parentId: `${oid}_engine_block`,
+            scaleLevel: "subcomponent",
+            function: "Converts the linear up-and-down motion of the pistons into rotational motion.",
+            material: "Forged Steel",
+            riskIfRemoved: "No rotational power generated to drive the wheels.",
+            position: [0, -0.2, 0],
+            color: "#71797e",
+            geometry: { type: "cylinder", radius: 0.1, depth: 1.8, rotation: [0, 0, 1.5708] } as any,
+            children: [`${oid}_connecting_rods`, `${oid}_timing_belt`],
+            microLevels: []
+          },
+          {
+            id: `${oid}_cylinders`,
+            name: "Cylinders (x4)",
+            parentId: `${oid}_engine_block`,
+            scaleLevel: "subcomponent",
+            function: "Chambers where the air-fuel mixture is compressed and ignited.",
+            material: "Cast Iron Liners",
+            riskIfRemoved: "No confined space for combustion to occur.",
+            position: [0, 0.1, 0],
+            color: "#34495e",
+            geometry: { type: "box", size: [1.2, 0.5, 0.4] } as any,
+            children: [`${oid}_pistons`],
+            microLevels: []
+          },
+          {
+            id: `${oid}_pistons`,
+            name: "Pistons",
+            parentId: `${oid}_cylinders`,
+            scaleLevel: "subcomponent",
+            function: "Moves up and down within the cylinders to compress the mixture and transfer combustion force.",
+            material: "Aluminum Alloy",
+            riskIfRemoved: "No mechanism to capture the energy of the combustion blast.",
+            position: [0, 0, 0],
+            color: "#95a5a6",
+            geometry: { type: "cylinder", radius: 0.18, depth: 0.4, rotation: [1.5708, 0, 0] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_connecting_rods`,
+            name: "Connecting Rods",
+            parentId: `${oid}_crankshaft`,
+            scaleLevel: "subcomponent",
+            function: "Connects the pistons to the crankshaft to transfer the force.",
+            material: "Forged Steel",
+            riskIfRemoved: "Pistons become disconnected; no power transfer to the crankshaft.",
+            position: [0, 0.2, 0],
+            color: "#7f8c8d",
+            geometry: { type: "box", size: [1.0, 0.4, 0.1] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_camshaft`,
+            name: "Camshaft",
+            parentId: `${oid}_cylinder_head`,
+            scaleLevel: "subcomponent",
+            function: "Opens and closes the intake and exhaust valves at precisely timed intervals.",
+            material: "Chilled Cast Iron",
+            riskIfRemoved: "Valves will not open; engine cannot intake air or exhaust gases.",
+            position: [0, 0.15, 0],
+            color: "#bdc3c7",
+            geometry: { type: "cylinder", radius: 0.05, depth: 1.6, rotation: [0, 0, 1.5708] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_valves`,
+            name: "Intake & Exhaust Valves",
+            parentId: `${oid}_cylinder_head`,
+            scaleLevel: "subcomponent",
+            function: "Lets air/fuel into the cylinders and lets exhaust gases out.",
+            material: "Stainless Steel / Titanium",
+            riskIfRemoved: "Total loss of cylinder seal or inability to flow gases.",
+            position: [0, 0.05, 0],
+            color: "#e67e22",
+            geometry: { type: "cylinder", radius: 0.03, depth: 1.4, rotation: [0, 0, 1.5708] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_timing_belt`,
+            name: "Timing Belt/Chain",
+            parentId: `${oid}_crankshaft`,
+            scaleLevel: "subcomponent",
+            function: "Keeps the crankshaft and camshaft in perfect synchronization.",
+            material: "Reinforced Rubber / Steel Chain",
+            riskIfRemoved: "Pistons and valves will collide, destroying the engine.",
+            position: [-0.85, 0.35, 0],
+            color: "#2c3e50",
+            geometry: { type: "box", size: [0.1, 0.9, 0.3] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_spark_plugs`,
+            name: "Spark Plugs",
+            parentId: `${oid}_cylinder_head`,
+            scaleLevel: "subcomponent",
+            function: "Delivers an electric spark to ignite the compressed air-fuel mixture.",
+            material: "Ceramic and Iridium/Platinum",
+            riskIfRemoved: "No ignition of fuel; engine will not run.",
+            position: [0, 0.25, 0.2],
+            color: "#ecf0f1",
+            geometry: { type: "cylinder", radius: 0.02, depth: 1.2, rotation: [0, 0, 1.5708] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_fuel_injectors`,
+            name: "Fuel Injectors",
+            parentId: `${oid}_cylinder_head`,
+            scaleLevel: "subcomponent",
+            function: "Sprays a precise, atomized amount of fuel into the cylinders.",
+            material: "Steel / Plastic Composites",
+            riskIfRemoved: "No fuel enters the engine; combustion is impossible.",
+            position: [0, 0.25, -0.2],
+            color: "#e74c3c",
+            geometry: { type: "cylinder", radius: 0.02, depth: 1.2, rotation: [0, 0, 1.5708] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_exhaust_manifold`,
+            name: "Exhaust Manifold",
+            parentId: `${oid}_cylinder_head`,
+            scaleLevel: "subcomponent",
+            function: "Collects exhaust gases from multiple cylinders and routes them to the exhaust pipe.",
+            material: "Cast Iron / Stainless Steel",
+            riskIfRemoved: "Hot, toxic gases vent directly into the engine bay, causing fire and failure.",
+            position: [0, 0, 0.6],
+            color: "#d35400",
+            geometry: { type: "box", size: [1.4, 0.3, 0.3] } as any,
+            children: [],
+            microLevels: []
+          },
+          {
+            id: `${oid}_water_pump`,
+            name: "Water Pump (Cooling System)",
+            parentId: `${oid}_engine_block`,
+            scaleLevel: "subcomponent",
+            function: "Circulates coolant through the engine block to prevent overheating.",
+            material: "Cast Aluminum",
+            riskIfRemoved: "Engine overheats within minutes, melting critical components.",
+            position: [0.8, 0, 0.4],
+            color: "#3498db",
+            geometry: { type: "cylinder", radius: 0.15, depth: 0.2, rotation: [0, 1.5708, 0] } as any,
             children: [],
             microLevels: []
           }

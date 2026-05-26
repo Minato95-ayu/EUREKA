@@ -1,0 +1,668 @@
+[
+  {
+    "id": "engine_block",
+    "name": "Engine Block",
+    "parentId": null,
+    "scaleLevel": "component",
+    "function": "Primary cast-iron block housing 4 cylinder bores, water jackets, and crankcase. The structural backbone of the entire engine.",
+    "material": "Cast Iron",
+    "riskIfRemoved": "Total engine failure \u2014 no structure to contain combustion or support rotating assembly.",
+    "position": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "color": "#4a4a4f",
+    "geometry": {
+      "type": "box",
+      "size": [
+        0.6,
+        0.35,
+        0.4
+      ]
+    },
+    "children": [
+      "cylinder_head",
+      "oil_pan",
+      "crankshaft",
+      "piston",
+      "timing_belt",
+      "water_pump",
+      "alternator",
+      "cooling_fan",
+      "intake_manifold",
+      "exhaust_manifold",
+      "thermostat_housing",
+      "oil_filter",
+      "starter_motor",
+      "engine_mount_left",
+      "engine_mount_right"
+    ],
+    "microLevels": [
+      {
+        "level": "material",
+        "name": "Gray cast iron",
+        "description": "Pearlitic gray iron with graphite flakes providing vibration damping and wear resistance.",
+        "next": null
+      }
+    ],
+    "simulationProperties": {
+      "mass": 45.0,
+      "heatGeneration": 0.1,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "cylinder_head",
+    "name": "Cylinder Head",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Aluminum casting closing the top of cylinder bores, containing combustion chambers, intake/exhaust ports, valve guides, and spark plug wells.",
+    "material": "Aluminum Alloy",
+    "riskIfRemoved": "Complete loss of compression in all cylinders \u2014 no combustion possible.",
+    "position": [
+      0.0,
+      0.22,
+      0.0
+    ],
+    "color": "#c0c5ce",
+    "geometry": {
+      "type": "box",
+      "size": [
+        0.6,
+        0.1,
+        0.38
+      ]
+    },
+    "children": [
+      "valve_cover",
+      "head_gasket"
+    ],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 14.0,
+      "heatGeneration": 0.3,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "valve_cover",
+    "name": "Valve Cover",
+    "parentId": "cylinder_head",
+    "scaleLevel": "subcomponent",
+    "function": "Stamped aluminum cover sealing the top of the cylinder head, protecting camshaft and valve springs from debris.",
+    "material": "Aluminum Alloy",
+    "riskIfRemoved": "Oil leaks from top end; valve train exposed to contamination.",
+    "position": [
+      0.0,
+      0.3,
+      0.0
+    ],
+    "color": "#c0c5ce",
+    "geometry": {
+      "type": "rounded_box",
+      "size": [
+        0.58,
+        0.06,
+        0.35
+      ],
+      "radius": 0.02
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 2.5,
+      "heatGeneration": 0.02,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "head_gasket",
+    "name": "Head Gasket",
+    "parentId": "cylinder_head",
+    "scaleLevel": "subcomponent",
+    "function": "Multi-layer steel gasket sealing the joint between block and head, containing combustion pressure, coolant, and oil passages.",
+    "material": "Multi-Layer Steel",
+    "riskIfRemoved": "Blown head gasket: coolant mixes with oil, compression lost, catastrophic overheating.",
+    "position": [
+      0.0,
+      0.175,
+      0.0
+    ],
+    "color": "#71797e",
+    "geometry": {
+      "type": "box",
+      "size": [
+        0.58,
+        0.003,
+        0.38
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 0.3,
+      "heatGeneration": 0.0,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "oil_pan",
+    "name": "Oil Pan",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Pressed steel sump collecting and storing engine oil. Contains oil pickup tube and drain plug.",
+    "material": "Pressed Steel",
+    "riskIfRemoved": "Total oil loss \u2014 engine seizes within minutes from lack of lubrication.",
+    "position": [
+      0.0,
+      -0.25,
+      0.0
+    ],
+    "color": "#71797e",
+    "geometry": {
+      "type": "box",
+      "size": [
+        0.55,
+        0.12,
+        0.35
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 4.5,
+      "heatGeneration": 0.01,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "crankshaft",
+    "name": "Crankshaft",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Forged steel rotating shaft converting linear piston motion into rotational torque via offset crank throws.",
+    "material": "Forged Steel",
+    "riskIfRemoved": "No rotational output \u2014 pistons move but produce no usable torque.",
+    "position": [
+      0.0,
+      -0.12,
+      0.0
+    ],
+    "color": "#71797e",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.025,
+      "depth": 0.55,
+      "rotation": [
+        0.0,
+        0.0,
+        1.5708
+      ]
+    },
+    "children": [
+      "flywheel",
+      "crankshaft_pulley"
+    ],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 12.0,
+      "heatGeneration": 0.15,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "flywheel",
+    "name": "Flywheel",
+    "parentId": "crankshaft",
+    "scaleLevel": "subcomponent",
+    "function": "Heavy cast-iron disc bolted to crankshaft rear, storing rotational inertia to smooth power delivery between combustion strokes.",
+    "material": "Cast Iron",
+    "riskIfRemoved": "Severe engine vibration, stalling at idle, impossible clutch engagement.",
+    "position": [
+      0.32,
+      -0.12,
+      0.0
+    ],
+    "color": "#4a4a4f",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.15,
+      "depth": 0.025,
+      "rotation": [
+        0.0,
+        0.0,
+        1.5708
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 8.0,
+      "heatGeneration": 0.02,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "crankshaft_pulley",
+    "name": "Crankshaft Pulley",
+    "parentId": "crankshaft",
+    "scaleLevel": "subcomponent",
+    "function": "Harmonic balancer and drive pulley at crankshaft front, driving accessory belt system.",
+    "material": "Cast Iron",
+    "riskIfRemoved": "No drive for alternator, water pump, or A/C. Accessory systems fail.",
+    "position": [
+      -0.32,
+      -0.12,
+      0.0
+    ],
+    "color": "#4a4a4f",
+    "geometry": {
+      "type": "lathe",
+      "radius": 0.08,
+      "depth": 0.03,
+      "rotation": [
+        0.0,
+        0.0,
+        1.5708
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 2.5,
+      "heatGeneration": 0.01,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "piston",
+    "name": "Pistons",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Forged aluminum pistons reciprocating in cylinder bores, compressing air-fuel mixture and transmitting combustion force.",
+    "material": "Aluminum Alloy",
+    "riskIfRemoved": "Cylinder dead \u2014 25% power loss, severe vibration imbalance.",
+    "position": [
+      0.0,
+      0.08,
+      0.0
+    ],
+    "color": "#c0c5ce",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.044,
+      "depth": 0.065
+    },
+    "children": [
+      "connecting_rod"
+    ],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 0.35,
+      "heatGeneration": 0.7,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "connecting_rod",
+    "name": "Connecting Rods",
+    "parentId": "piston",
+    "scaleLevel": "subcomponent",
+    "function": "Forged steel rods linking pistons to crankshaft crank throws, converting linear reciprocation to rotation.",
+    "material": "Forged Steel",
+    "riskIfRemoved": "Piston disconnected from crankshaft \u2014 thrown rod destroys engine.",
+    "position": [
+      0.0,
+      -0.12,
+      0.0
+    ],
+    "color": "#71797e",
+    "geometry": {
+      "type": "capsule",
+      "radius": 0.012,
+      "depth": 0.14
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 0.45,
+      "heatGeneration": 0.08,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "timing_belt",
+    "name": "Timing Belt",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Reinforced rubber belt synchronizing crankshaft and camshaft rotation, ensuring valves open/close at correct piston positions.",
+    "material": "Reinforced Rubber",
+    "riskIfRemoved": "Valve timing lost \u2014 pistons strike open valves, bending them (interference engine).",
+    "position": [
+      -0.33,
+      0.05,
+      0.0
+    ],
+    "color": "#1a1a1a",
+    "geometry": {
+      "type": "torus",
+      "radius": 0.12,
+      "tube": 0.012,
+      "rotation": [
+        0.0,
+        0.0,
+        1.5708
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 0.3,
+      "heatGeneration": 0.03,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "water_pump",
+    "name": "Water Pump",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Centrifugal impeller pump circulating coolant through block water jackets, head, and radiator.",
+    "material": "Aluminum Alloy",
+    "riskIfRemoved": "No coolant circulation \u2014 engine overheats rapidly, head gasket failure.",
+    "position": [
+      -0.35,
+      0.0,
+      0.15
+    ],
+    "color": "#c0c5ce",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.06,
+      "depth": 0.05,
+      "rotation": [
+        1.5708,
+        0.0,
+        0.0
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 1.8,
+      "heatGeneration": 0.02,
+      "energyConsumption": 0.05
+    }
+  },
+  {
+    "id": "alternator",
+    "name": "Alternator",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Belt-driven generator converting mechanical rotation to electrical power for battery charging and vehicle electronics.",
+    "material": "Aluminum with Copper Windings",
+    "riskIfRemoved": "No electrical generation \u2014 battery drains, ignition and fuel injection fail.",
+    "position": [
+      0.0,
+      0.05,
+      0.28
+    ],
+    "color": "#c0c5ce",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.07,
+      "depth": 0.1,
+      "rotation": [
+        1.5708,
+        0.0,
+        0.0
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 5.5,
+      "heatGeneration": 0.2,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "cooling_fan",
+    "name": "Cooling Fan",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Engine-driven or electric fan pulling ambient air through radiator core to reject combustion heat.",
+    "material": "Glass-Filled Nylon",
+    "riskIfRemoved": "Insufficient airflow at low speed \u2014 engine overheats in traffic.",
+    "position": [
+      0.0,
+      0.08,
+      -0.28
+    ],
+    "color": "#3a3a3c",
+    "geometry": {
+      "type": "fan",
+      "radius": 0.18,
+      "blades": 7,
+      "rotation": [
+        1.5708,
+        0.0,
+        0.0
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 0.9,
+      "heatGeneration": 0.02,
+      "energyConsumption": 0.08
+    }
+  },
+  {
+    "id": "intake_manifold",
+    "name": "Intake Manifold",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Cast aluminum plenum distributing filtered air (or air-fuel mixture) evenly to all 4 cylinder intake ports.",
+    "material": "Cast Aluminum",
+    "riskIfRemoved": "No air delivery to cylinders \u2014 engine cannot run.",
+    "position": [
+      0.0,
+      0.15,
+      0.25
+    ],
+    "color": "#c0c5ce",
+    "geometry": {
+      "type": "rounded_box",
+      "size": [
+        0.5,
+        0.08,
+        0.1
+      ],
+      "radius": 0.02
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 4.0,
+      "heatGeneration": 0.0,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "exhaust_manifold",
+    "name": "Exhaust Manifold",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Cast iron manifold collecting exhaust gases from all 4 cylinders and routing them to the catalytic converter and exhaust system.",
+    "material": "Cast Iron",
+    "riskIfRemoved": "Exhaust gases vent into engine bay \u2014 toxic fumes, loss of back-pressure.",
+    "position": [
+      0.0,
+      0.1,
+      -0.25
+    ],
+    "color": "#4a4a4f",
+    "geometry": {
+      "type": "rounded_box",
+      "size": [
+        0.5,
+        0.08,
+        0.08
+      ],
+      "radius": 0.015
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 8.0,
+      "heatGeneration": 0.8,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "thermostat_housing",
+    "name": "Thermostat Housing",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Aluminum housing containing the thermostat valve that regulates coolant flow based on engine temperature.",
+    "material": "Aluminum Alloy",
+    "riskIfRemoved": "Uncontrolled coolant flow \u2014 engine runs too cold or overheats.",
+    "position": [
+      0.28,
+      0.18,
+      0.0
+    ],
+    "color": "#c0c5ce",
+    "geometry": {
+      "type": "hemisphere",
+      "radius": 0.04
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 0.6,
+      "heatGeneration": 0.0,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "oil_filter",
+    "name": "Oil Filter",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Spin-on canister filter trapping metal particles, carbon, and contaminants from circulating engine oil.",
+    "material": "Steel Canister with Paper Media",
+    "riskIfRemoved": "Unfiltered oil circulates \u2014 accelerated bearing and cylinder wall wear.",
+    "position": [
+      0.2,
+      -0.18,
+      0.22
+    ],
+    "color": "#1c1c1e",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.04,
+      "depth": 0.1,
+      "rotation": [
+        1.5708,
+        0.0,
+        0.0
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 0.4,
+      "heatGeneration": 0.0,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "starter_motor",
+    "name": "Starter Motor",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "High-torque DC electric motor with Bendix gear engaging flywheel ring gear to crank engine for starting.",
+    "material": "Steel and Copper Windings",
+    "riskIfRemoved": "Cannot crank engine \u2014 vehicle will not start.",
+    "position": [
+      0.3,
+      -0.15,
+      -0.1
+    ],
+    "color": "#71797e",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.04,
+      "depth": 0.15,
+      "rotation": [
+        0.0,
+        0.0,
+        1.5708
+      ]
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 3.5,
+      "heatGeneration": 0.4,
+      "energyConsumption": 0.8
+    }
+  },
+  {
+    "id": "engine_mount_left",
+    "name": "Left Engine Mount",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Rubber-bonded steel mount isolating engine vibrations from vehicle chassis on left side.",
+    "material": "Rubber bonded to Steel",
+    "riskIfRemoved": "Engine vibration transfers directly to chassis \u2014 severe NVH, potential drivetrain misalignment.",
+    "position": [
+      -0.32,
+      -0.1,
+      0.0
+    ],
+    "color": "#1a1a1a",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.04,
+      "depth": 0.05
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 1.2,
+      "heatGeneration": 0.0,
+      "energyConsumption": 0.0
+    }
+  },
+  {
+    "id": "engine_mount_right",
+    "name": "Right Engine Mount",
+    "parentId": "engine_block",
+    "scaleLevel": "subcomponent",
+    "function": "Rubber-bonded steel mount isolating engine vibrations from vehicle chassis on right side.",
+    "material": "Rubber bonded to Steel",
+    "riskIfRemoved": "Asymmetric mounting \u2014 engine shifts under torque, belt slippage.",
+    "position": [
+      0.32,
+      -0.1,
+      0.0
+    ],
+    "color": "#1a1a1a",
+    "geometry": {
+      "type": "cylinder",
+      "radius": 0.04,
+      "depth": 0.05
+    },
+    "children": [],
+    "microLevels": [],
+    "simulationProperties": {
+      "mass": 1.2,
+      "heatGeneration": 0.0,
+      "energyConsumption": 0.0
+    }
+  }
+]

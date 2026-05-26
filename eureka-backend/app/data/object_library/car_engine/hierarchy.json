@@ -1,0 +1,134 @@
+{
+  "rootId": "engine_block",
+  "relations": [
+    {
+      "id": "engine_block",
+      "parentId": null,
+      "children": [
+        "cylinder_head",
+        "oil_pan",
+        "crankshaft",
+        "piston",
+        "timing_belt",
+        "water_pump",
+        "alternator",
+        "cooling_fan",
+        "intake_manifold",
+        "exhaust_manifold",
+        "thermostat_housing",
+        "oil_filter",
+        "starter_motor",
+        "engine_mount_left",
+        "engine_mount_right"
+      ]
+    },
+    {
+      "id": "cylinder_head",
+      "parentId": "engine_block",
+      "children": [
+        "valve_cover",
+        "head_gasket"
+      ]
+    },
+    {
+      "id": "valve_cover",
+      "parentId": "cylinder_head",
+      "children": []
+    },
+    {
+      "id": "head_gasket",
+      "parentId": "cylinder_head",
+      "children": []
+    },
+    {
+      "id": "oil_pan",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "crankshaft",
+      "parentId": "engine_block",
+      "children": [
+        "flywheel",
+        "crankshaft_pulley"
+      ]
+    },
+    {
+      "id": "flywheel",
+      "parentId": "crankshaft",
+      "children": []
+    },
+    {
+      "id": "crankshaft_pulley",
+      "parentId": "crankshaft",
+      "children": []
+    },
+    {
+      "id": "piston",
+      "parentId": "engine_block",
+      "children": [
+        "connecting_rod"
+      ]
+    },
+    {
+      "id": "connecting_rod",
+      "parentId": "piston",
+      "children": []
+    },
+    {
+      "id": "timing_belt",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "water_pump",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "alternator",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "cooling_fan",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "intake_manifold",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "exhaust_manifold",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "thermostat_housing",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "oil_filter",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "starter_motor",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "engine_mount_left",
+      "parentId": "engine_block",
+      "children": []
+    },
+    {
+      "id": "engine_mount_right",
+      "parentId": "engine_block",
+      "children": []
+    }
+  ]
+}

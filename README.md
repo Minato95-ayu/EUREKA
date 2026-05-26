@@ -81,6 +81,11 @@ Users can manipulate models using **voice controls** and **hand gestures** via t
 *   **3D Verlet Physics**: Real-time calculation of particle momentum, kinetic energy tracking, Van der Waals force, and electrostatic Coulomb fields.
 *   **RDKit Molecular Engine**: Determines molecular weights, logP partition coefficients, hydrogen bond donors/acceptors, and automatically predicts chemical reaction routes.
 
+### 🔬 4. AAA Scientific Visualization & Overlays
+*   **Photorealistic Rendering**: Uses `@react-three/drei` and `@react-three/postprocessing` to provide HDRI studio environments, metallic PBR roughness profiles, and cinematic bloom effects.
+*   **Physics-Based Mechanical Animations**: Components procedurally animate based on backend mathematical presets (e.g., oscillating pistons synchronized with continuous crankshaft rotations).
+*   **Dynamic Data Overlays**: Includes interactive "Heat Map" modes that visualize real-time thermal generation data (`simulationProperties`) dynamically mapped to glowing emissive gradients.
+
 ---
 
 ## 🧠 ARIA & The Multi-Agent Mesh

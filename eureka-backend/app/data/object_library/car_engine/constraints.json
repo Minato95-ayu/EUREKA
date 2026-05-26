@@ -1,0 +1,19 @@
+[
+  {
+    "id": "piston",
+    "layout": {
+      "type": "linear_array",
+      "count": 4,
+      "start": [
+        -0.2,
+        0.0,
+        0.0
+      ],
+      "spacing": [
+        0.13,
+        0.0,
+        0.0
+      ]
+    }
+  }
+]

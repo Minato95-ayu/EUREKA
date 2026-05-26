@@ -1,0 +1,7 @@
+{
+  "id": "car_engine",
+  "name": "Inline-4 Car Engine",
+  "type": "mechanical_system",
+  "summary": "A highly detailed inline-4 internal combustion engine with 25 components including engine block, cylinder head with valve cover and gasket, oil pan, crankshaft with flywheel and pulley, 4 pistons with connecting rods, timing belt, water pump, alternator, cooling fan, intake and exhaust manifolds, thermostat, oil filter, starter motor, and engine mounts \u2014 all with real-world materials, colors, and proportions.",
+  "defaultView": "assembled"
+}
