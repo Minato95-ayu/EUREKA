@@ -2,14 +2,38 @@ import type { ExplorableObject } from '../core/EurekaTypes'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
-export async function searchObjectFromAPI(query: string): Promise<ExplorableObject> {
+export async function searchObjectFromAPI(query: string, retries = 2): Promise<ExplorableObject> {
   const params = new URLSearchParams({ q: query })
-  const generateResponse = await fetch(`${API_BASE}/api/objects/generate?${params.toString()}`, {
-    method: 'POST'
-  })
-  if (!generateResponse.ok) throw new Error('Generation failed')
-  const objectData: ExplorableObject = await generateResponse.json()
-  return objectData
+  
+  try {
+    const generateResponse = await fetch(`${API_BASE}/api/objects/generate?${params.toString()}`, {
+      method: 'POST'
+    })
+    
+    if (!generateResponse.ok) {
+      // backend randomly drops connections on heavy mesh payloads, so we retry
+      if (retries > 0) {
+        console.warn(`[DataRelay] Backend failed with ${generateResponse.status}, retrying... (${retries} left)`)
+        await new Promise(r => setTimeout(r, 1000)) // give it a sec
+        return searchObjectFromAPI(query, retries - 1)
+      }
+      throw new Error(`Generation failed with status ${generateResponse.status}`)
+    }
+    
+    const objectData: ExplorableObject = await generateResponse.json()
+    // null safety check just in case the backend sends an empty object
+    if (!objectData || !objectData.components) {
+      throw new Error('Malformed object data received from backend')
+    }
+    return objectData
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`[DataRelay] Network error, retrying... (${retries} left)`)
+      await new Promise(r => setTimeout(r, 1500))
+      return searchObjectFromAPI(query, retries - 1)
+    }
+    throw error
+  }
 }
 
 export async function fetchWikipediaSummary(searchText: string): Promise<{ title: string; description: string }> {
