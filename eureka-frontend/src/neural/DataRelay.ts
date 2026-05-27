@@ -1,4 +1,4 @@
-import type { ExplorableObject } from '../types'
+import type { ExplorableObject } from '../core/EurekaTypes'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 

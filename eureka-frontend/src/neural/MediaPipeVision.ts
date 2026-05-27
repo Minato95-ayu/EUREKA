@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type { Hands as MediaPipeHands, Results } from '@mediapipe/hands'
-import type { GestureState } from '../types'
+import type { GestureState } from '../core/EurekaTypes'
 
 function loadMediaPipeHands(): Promise<new (config?: { locateFile?: (file: string) => string }) => MediaPipeHands> {
   if (window.Hands) return Promise.resolve(window.Hands)
@@ -23,7 +23,7 @@ function loadMediaPipeHands(): Promise<new (config?: { locateFile?: (file: strin
   })
 }
 
-export function useHandTracking(callbacks: {
+export function useMediaPipeVision(callbacks: {
   onZoomIn: () => void
   onZoomOut: () => void
   onReset: () => void

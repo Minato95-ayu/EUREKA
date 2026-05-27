@@ -2,8 +2,8 @@ import React, { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
-import type { AriaState, GestureState, ObjectComponent, ExplorableObject } from '../../types'
-import { LabScene } from '../canvas/LabScene'
+import type { AriaState, GestureState, ObjectComponent, ExplorableObject } from '../core/EurekaTypes'
+import { HolographicLab } from '../engine/HolographicLab'
 
 interface ResearchScreenProps {
   query: string
@@ -32,7 +32,7 @@ interface ResearchScreenProps {
   setIsAnimating: (value: boolean) => void
 }
 
-function ResearchScreen({
+function KnowledgeGraph({
   query,
   setQuery,
   onExecute,
@@ -118,7 +118,7 @@ function ResearchScreen({
             gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
           >
             <Suspense fallback={<Html center>Loading 3D...</Html>}>
-              <LabScene
+              <HolographicLab
                 zoomLevel={zoomLevel}
                 gesture={gesture}
                 activeObject={activeObject}
@@ -215,7 +215,7 @@ function ResearchScreen({
             Component Graph <span>{activeObject.defaultView}</span>
           </div>
           <div className="component-list">
-            {activeObject.components.map((component) => (
+            {activeObject.components.map((component: any) => (
               <button
                 className={selectedComponent?.id === component.id ? 'selected' : ''}
                 key={component.id}
@@ -273,4 +273,4 @@ function ResearchScreen({
   )
 }
 
-export default ResearchScreen
+export default KnowledgeGraph

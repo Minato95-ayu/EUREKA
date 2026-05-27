@@ -4,8 +4,8 @@ import { useFrame } from '@react-three/fiber'
 import { Html, Edges, RoundedBox } from '@react-three/drei'
 import { Geometry, Base, Subtraction } from '@react-three/csg'
 import * as THREE from 'three'
-import type { ObjectComponent, ObjectGeometry } from '../../types'
-import { GltfModelWrapper } from './GltfModelWrapper'
+import type { ObjectComponent, ObjectGeometry } from '../core/EurekaTypes'
+import { ModelLoader } from '../engine/ModelLoader'
 
 interface ComponentMeshProps {
   component: ObjectComponent
@@ -19,7 +19,7 @@ interface ComponentMeshProps {
   allComponents?: ObjectComponent[]
 }
 
-export function ComponentMesh({
+export function MeshRenderer({
   component,
   selected,
   onSelect,
@@ -269,7 +269,7 @@ export function ComponentMesh({
           <Base position={geometry.base?.position || [0,0,0]} rotation={geometry.base?.rotation || [0,0,0]}>
             {getRawGeometry(geometry.base || { type: 'box' })}
           </Base>
-          {geometry.subtractions?.map((sub, idx) => (
+          {geometry.subtractions?.map((sub: any, idx: number) => (
             <Subtraction key={idx} position={sub.position || [0,0,0]} rotation={sub.rotation || [0,0,0]}>
               {getRawGeometry(sub)}
             </Subtraction>
@@ -311,7 +311,7 @@ export function ComponentMesh({
   } else if (geometry.type === 'gltf' && geometry.url) {
     innerContent = (
       <>
-        <GltfModelWrapper 
+        <ModelLoader 
           url={geometry.url} 
           materialProps={materialProps} 
           selected={selected} 

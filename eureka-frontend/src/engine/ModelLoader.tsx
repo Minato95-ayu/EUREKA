@@ -2,7 +2,7 @@
 import { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
 
-export function GltfModelWrapper({ 
+export function ModelLoader({ 
   url, 
   materialProps, 
   selected, 

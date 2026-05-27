@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import type { AriaState, BrowserSpeechRecognition } from '../types'
+import type { AriaState, BrowserSpeechRecognition } from '../core/EurekaTypes'
 
-export function useVoiceControl(onCommand: (transcript: string) => void) {
+export function useAriaVoiceLink(onCommand: (transcript: string) => void) {
   const [ariaState, setAriaState] = useState<AriaState>('idle')
   const [ariaReply, setAriaReply] = useState('ARIA online. Voice and gesture systems are ready for calibration.')
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
@@ -42,7 +42,7 @@ export function useVoiceControl(onCommand: (transcript: string) => void) {
       const transcript = event.results[event.results.length - 1][0].transcript
       onCommand(transcript)
     }
-    recognition.onend = () => setAriaState((state) => state === 'listening' ? 'idle' : state)
+    recognition.onend = () => setAriaState((state: any) => state === 'listening' ? 'idle' : state)
     recognition.onerror = () => {
       setAriaState('idle')
       setAriaReply('Voice recognition could not hear a clear command. Try again.')

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-function PipelineScreen() {
+function AgentPipeline() {
   const [cpu, setCpu] = useState(42)
   const [mem, setMem] = useState(14.2)
   const [memoryPercent, setMemoryPercent] = useState(68)
@@ -71,4 +71,4 @@ function PipelineScreen() {
   )
 }
 
-export default PipelineScreen
+export default AgentPipeline

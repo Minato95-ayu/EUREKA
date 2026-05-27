@@ -1,11 +1,17 @@
 import { useCallback, useState, useRef } from 'react'
-import type { Tab, ObjectComponent, ExplorableObject } from './types'
-import { searchObjectFromAPI, fetchWikipediaSummary, processAgentCommand } from './services/api'
-import { useVoiceControl } from './hooks/useVoiceControl'
-import { useHandTracking } from './hooks/useHandTracking'
-import { generateFallbackObject } from './data/fallbackObjects'
-import { TopBar, BottomNav, AriaPanel } from './components/layout'
-import { StatusScreen, BatchScreen, PipelineScreen, ResearchScreen, ResultsScreen } from './components/dashboard'
+import type { Tab, ObjectComponent, ExplorableObject } from './core/EurekaTypes'
+import { searchObjectFromAPI, fetchWikipediaSummary, processAgentCommand } from './neural/DataRelay'
+import { useAriaVoiceLink } from './neural/AriaVoiceLink'
+import { useMediaPipeVision } from './neural/MediaPipeVision'
+import { generateFallbackObject } from './core/FallbackSynthesizer'
+import TopNav from './ui/TopNav'
+import BottomDock from './ui/BottomDock'
+import AriaTerminal from './ui/AriaTerminal'
+import TelemetryScreen from './hud/TelemetryScreen'
+import SimulationBatch from './hud/SimulationBatch'
+import AgentPipeline from './hud/AgentPipeline'
+import KnowledgeGraph from './hud/KnowledgeGraph'
+import AnalysisResults from './hud/AnalysisResults'
 import './App.css'
 
 function App() {
@@ -23,7 +29,7 @@ function App() {
   const executeCommandRef = useRef<((rawCommand?: string) => Promise<void>) | null>(null)
 
   // Voice control hook
-  const { voiceSupported, ariaState, ariaReply, speak, toggleVoice, setAriaState, setAriaReply } = useVoiceControl(
+  const { voiceSupported, ariaState, ariaReply, speak, toggleVoice, setAriaState, setAriaReply } = useAriaVoiceLink(
     useCallback((transcript) => {
       setQuery(transcript)
       void executeCommandRef.current?.(transcript)
@@ -31,7 +37,7 @@ function App() {
   )
 
   // Hand tracking hook
-  const { cameraEnabled, gesture, videoRef, toggleCamera } = useHandTracking({
+  const { cameraEnabled, gesture, videoRef, toggleCamera } = useMediaPipeVision({
     onZoomIn: useCallback(() => setZoomLevel((value) => Math.min(100, value * 1.05)), []),
     onZoomOut: useCallback(() => setZoomLevel((value) => Math.max(1, value / 1.05)), []),
     onReset: useCallback(() => {
@@ -144,14 +150,14 @@ function App() {
 
   return (
     <div className="app-shell">
-      <TopBar />
+      <TopNav />
       <div className="content-shell">
         {{
-          status: <StatusScreen />,
-          batch: <BatchScreen />,
-          pipeline: <PipelineScreen />,
+          status: <TelemetryScreen />,
+          batch: <SimulationBatch />,
+          pipeline: <AgentPipeline />,
           research: (
-            <ResearchScreen
+            <KnowledgeGraph
               query={query}
               setQuery={setQuery}
               onExecute={() => void executeCommand()}
@@ -181,9 +187,9 @@ function App() {
               setIsAnimating={setIsAnimating}
             />
           ),
-          results: <ResultsScreen query={query} activeObject={activeObject} />
+          results: <AnalysisResults query={query} activeObject={activeObject} />
         }[activeTab]}
-        <AriaPanel
+        <AriaTerminal
           ariaState={ariaState}
           ariaReply={ariaReply}
           onLoadEngine={() => void searchObject('car engine')}
@@ -191,7 +197,7 @@ function App() {
           onZoomIn={() => void executeCommand('zoom in')}
         />
       </div>
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomDock activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   )
 }

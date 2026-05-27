@@ -1,4 +1,4 @@
-import type { Tab } from '../types'
+import type { Tab } from '../core/EurekaTypes'
 
 export const tabs: Array<{ id: Tab; label: string; icon: string }> = [
   { id: 'status', label: 'Status', icon: '▦' },
