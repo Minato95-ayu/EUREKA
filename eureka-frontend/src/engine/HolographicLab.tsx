@@ -4,8 +4,8 @@ import { OrbitControls, Sphere, Environment, ContactShadows } from '@react-three
 import { EffectComposer, Bloom, N8AO, Vignette, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import type { Group } from 'three'
-import type { ObjectComponent, ExplorableObject, GestureState } from '../../types'
-import { ComponentMesh } from './ComponentMesh'
+import type { ObjectComponent, ExplorableObject, GestureState } from '../core/EurekaTypes'
+import { MeshRenderer } from '../engine/MeshRenderer'
 
 interface LabSceneProps {
   zoomLevel: number
@@ -19,7 +19,7 @@ interface LabSceneProps {
   isAnimating: boolean
 }
 
-export function LabScene({
+export function HolographicLab({
   zoomLevel,
   gesture,
   activeObject,
@@ -84,8 +84,8 @@ export function LabScene({
 
       <group ref={group}>
         {activeObject ? (
-          activeObject.components.map((component) => (
-            <ComponentMesh
+          activeObject.components.map((component: any) => (
+            <MeshRenderer
               component={component}
               key={component.id}
               selected={selectedComponent?.id === component.id}

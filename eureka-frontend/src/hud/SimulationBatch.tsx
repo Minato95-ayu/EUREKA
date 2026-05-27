@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { fetchSimulations, createSimulation } from '../../services/api'
+import { fetchSimulations, createSimulation } from '../neural/DataRelay'
 
-function BatchScreen() {
+function SimulationBatch() {
   const [simulations, setSimulations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -97,4 +97,4 @@ function BatchScreen() {
   )
 }
 
-export default BatchScreen
+export default SimulationBatch

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import MetricCard from './MetricCard'
-import { logs as initialLogs } from '../../data/constants'
-import { fetchDetailedHealth } from '../../services/api'
+import MetricWidget from './MetricWidget'
+import { logs as initialLogs } from '../core/Constants'
+import { fetchDetailedHealth } from '../neural/DataRelay'
 
-function StatusScreen() {
+function TelemetryScreen() {
   const [checks, setChecks] = useState<Record<string, string>>({
     database: 'loading',
     redis: 'loading',
@@ -50,19 +50,19 @@ function StatusScreen() {
         <p>Global telemetry and autonomous research operations.</p>
       </section>
       <div className="metric-grid">
-        <MetricCard
+        <MetricWidget
           label="DATABASE"
           value={checks.database === 'healthy' ? 'OK' : checks.database === 'loading' ? '...' : 'OFF'}
           detail="PostgreSQL backend engine"
           tone={checks.database === 'healthy' ? 'green' : 'pink'}
         />
-        <MetricCard
+        <MetricWidget
           label="OLLAMA LLM"
           value={checks.ollama === 'healthy' ? 'OK' : checks.ollama === 'loading' ? '...' : 'OFF'}
           detail="Local model host status"
           tone={checks.ollama === 'healthy' ? 'green' : 'pink'}
         />
-        <MetricCard
+        <MetricWidget
           label="REDIS QUEUE"
           value={checks.redis === 'healthy' ? 'OK' : checks.redis === 'loading' ? '...' : 'OFF'}
           detail="Task queue status feed"
@@ -90,4 +90,4 @@ function StatusScreen() {
   )
 }
 
-export default StatusScreen
+export default TelemetryScreen

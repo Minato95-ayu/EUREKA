@@ -1,4 +1,4 @@
-import type { AriaState } from '../../types'
+import type { AriaState } from '../core/EurekaTypes'
 
 interface AriaPanelProps {
   ariaState: AriaState
@@ -8,7 +8,7 @@ interface AriaPanelProps {
   onZoomIn: () => void
 }
 
-export default function AriaPanel({ ariaState, ariaReply, onLoadEngine, onExplainPart, onZoomIn }: AriaPanelProps) {
+export default function AriaTerminal({ ariaState, ariaReply, onLoadEngine, onExplainPart, onZoomIn }: AriaPanelProps) {
   return (
     <aside className="aria-panel">
       <div className="section-title">ARIA Agent <span>{ariaState}</span></div>

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ExplorableObject } from '../types'
+import type { ExplorableObject } from '../core/EurekaTypes'
 
 export function generateFallbackObject(searchText: string, wikiTitle: string, wikiDesc: string): ExplorableObject {
   const q = searchText.toLowerCase()

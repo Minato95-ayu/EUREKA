@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { fetchPapersFromAPI } from '../../services/api'
+import { fetchPapersFromAPI } from '../neural/DataRelay'
 
 interface ResultsScreenProps {
   query?: string
   activeObject?: any
 }
 
-function ResultsScreen({ query, activeObject }: ResultsScreenProps) {
+function AnalysisResults({ query, activeObject }: ResultsScreenProps) {
   const [paperList, setPaperList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedIdx, setSelectedIdx] = useState(0)
@@ -82,4 +82,4 @@ function ResultsScreen({ query, activeObject }: ResultsScreenProps) {
   )
 }
 
-export default ResultsScreen
+export default AnalysisResults
