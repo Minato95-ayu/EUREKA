@@ -3,10 +3,12 @@ import type { Tab, ObjectComponent, ExplorableObject } from './core/EurekaTypes'
 import { searchObjectFromAPI, fetchWikipediaSummary, processAgentCommand } from './neural/DataRelay'
 import { useAriaVoiceLink } from './neural/AriaVoiceLink'
 import { useMediaPipeVision } from './neural/MediaPipeVision'
+import { AgentTaskQueue } from './neural/AgentTaskQueue'
 import { generateFallbackObject } from './core/FallbackSynthesizer'
 import TopNav from './ui/TopNav'
 import BottomDock from './ui/BottomDock'
 import AriaTerminal from './ui/AriaTerminal'
+import { PerformanceProfiler } from './hud/PerformanceProfiler'
 import TelemetryScreen from './hud/TelemetryScreen'
 import SimulationBatch from './hud/SimulationBatch'
 import AgentPipeline from './hud/AgentPipeline'
@@ -131,19 +133,22 @@ function App() {
       setShowLabels(true)
     }
 
-    setAriaState('thinking')
-    setAriaReply(`Processing command: ${command}`)
+    AgentTaskQueue.enqueue(async () => {
+      setAriaState('thinking')
+      setAriaReply(`Processing command: ${command}`)
 
-    try {
-      const context = selectedComponent
-        ? `\n\nSelected object: ${activeObject?.name || 'unknown'}\nSelected component: ${selectedComponent.name}\nFunction: ${selectedComponent.function}\nMaterial: ${selectedComponent.material || 'unknown'}\nRisk if removed: ${selectedComponent.riskIfRemoved || 'unknown'}`
-        : ''
-      const reply = await processAgentCommand(`${command}${context}`)
-      speak(reply)
-    } catch {
-      speak(`ARIA local mode: ${command}. I updated the lab view and kept the command in session memory.`)
-    }
-  }, [activeObject, query, searchObject, selectedComponent, speak, setAriaState, setAriaReply])
+      try {
+        const context = selectedComponent
+          ? `\n\nSelected object: ${activeObject?.name || 'unknown'}\nSelected component: ${selectedComponent.name}\nFunction: ${selectedComponent.function}\nMaterial: ${selectedComponent.material || 'unknown'}\nRisk if removed: ${selectedComponent.riskIfRemoved || 'unknown'}`
+          : ''
+        const reply = await processAgentCommand(`${command}${context}`)
+        speak(reply)
+      } catch (err) {
+        console.error(err)
+        speak('I encountered an error while processing that command.')
+      }
+    })
+  }, [activeObject, selectedComponent, setAriaState, setAriaReply, speak, searchObject])
 
   // Sync ref with the latest callback
   executeCommandRef.current = executeCommand
@@ -198,6 +203,7 @@ function App() {
         />
       </div>
       <BottomDock activeTab={activeTab} onTabChange={setActiveTab} />
+      <PerformanceProfiler />
     </div>
   )
 }
