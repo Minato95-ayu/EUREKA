@@ -4,6 +4,7 @@ import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import type { AriaState, GestureState, ObjectComponent, ExplorableObject } from '../core/EurekaTypes'
 import { HolographicLab } from '../engine/HolographicLab'
+import { RenderErrorBoundary } from '../ui/RenderErrorBoundary'
 
 interface ResearchScreenProps {
   query: string
@@ -111,26 +112,28 @@ function KnowledgeGraph({
           )}
         </ul>
         <div className="scene-shell" style={{ position: 'relative' }}>
-          <Canvas
-            shadows
-            dpr={[1, 2]}
-            camera={{ position: [4, 3, 6], fov: 45, near: 0.01, far: 100 }}
-            gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
-          >
-            <Suspense fallback={<Html center>Loading 3D...</Html>}>
-              <HolographicLab
-                zoomLevel={zoomLevel}
-                gesture={gesture}
-                activeObject={activeObject}
-                selectedComponent={selectedComponent}
-                onSelectComponent={onSelectComponent}
-                explodeFactor={explodeFactor}
-                shellMode={shellMode}
-                showLabels={showLabels}
-                isAnimating={isAnimating}
-              />
-            </Suspense>
-          </Canvas>
+          <RenderErrorBoundary>
+            <Canvas
+              shadows
+              dpr={[1, 2]}
+              camera={{ position: [4, 3, 6], fov: 45, near: 0.01, far: 100 }}
+              gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+            >
+              <Suspense fallback={<Html center>Loading 3D...</Html>}>
+                <HolographicLab
+                  zoomLevel={zoomLevel}
+                  gesture={gesture}
+                  activeObject={activeObject}
+                  selectedComponent={selectedComponent}
+                  onSelectComponent={onSelectComponent}
+                  explodeFactor={explodeFactor}
+                  shellMode={shellMode}
+                  showLabels={showLabels}
+                  isAnimating={isAnimating}
+                />
+              </Suspense>
+            </Canvas>
+          </RenderErrorBoundary>
           <div className="viewport-controls-overlay">
             <div className="control-group">
               <label>Dismantle (Exploded View)</label>
