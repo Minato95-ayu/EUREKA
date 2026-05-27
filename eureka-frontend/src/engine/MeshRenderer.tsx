@@ -6,6 +6,7 @@ import { Geometry, Base, Subtraction } from '@react-three/csg'
 import * as THREE from 'three'
 import type { ObjectComponent, ObjectGeometry } from '../core/EurekaTypes'
 import { ModelLoader } from '../engine/ModelLoader'
+import { ExplosionKinematics } from '../engine/ExplosionKinematics'
 
 interface ComponentMeshProps {
   component: ObjectComponent
@@ -39,19 +40,7 @@ export function MeshRenderer({
 
   const defaultPos = component.position
   const displacedPos = useMemo(() => {
-    let pos = [...defaultPos] as [number, number, number]
-    if (component.parentId !== null) {
-      const dirX = defaultPos[0]
-      const dirY = defaultPos[1]
-      const dirZ = defaultPos[2]
-      const length = Math.hypot(dirX, dirY, dirZ) || 1.0
-      pos = [
-        defaultPos[0] + (dirX / length) * explodeFactor * 1.2,
-        defaultPos[1] + (dirY / length) * explodeFactor * 1.2,
-        defaultPos[2] + (dirZ / length) * explodeFactor * 1.2,
-      ]
-    }
-    return pos
+    return ExplosionKinematics.calculateDisplacement(defaultPos, component.parentId, explodeFactor)
   }, [defaultPos, component.parentId, explodeFactor])
 
   const materialProps = useMemo(() => {

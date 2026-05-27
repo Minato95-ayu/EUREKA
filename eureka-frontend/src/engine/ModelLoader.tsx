@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useGLTF } from '@react-three/drei'
+import { VRAMOptimizer } from '../engine/VRAMOptimizer'
 
 export function ModelLoader({ 
   url, 
@@ -50,5 +51,13 @@ export function ModelLoader({
     })
     return clone
   }, [scene, materialProps, selected, selectedComponentId])
+
+  useEffect(() => {
+    return () => {
+      // When the component unmounts or the scene changes, strictly purge it from VRAM
+      VRAMOptimizer.purge(clonedScene)
+    }
+  }, [clonedScene])
+
   return <primitive object={clonedScene} />
 }
