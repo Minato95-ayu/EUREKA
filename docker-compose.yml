@@ -40,7 +40,7 @@ services:
       - eureka-network
 
   postgres:
-    image: postgres:15-alpine
+    image: ankane/pgvector:v0.5.1-pg15
     environment:
       - POSTGRES_USER=eureka
       - POSTGRES_PASSWORD=eureka_password

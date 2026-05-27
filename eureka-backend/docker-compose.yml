@@ -17,7 +17,7 @@ services:
 
   # FastAPI Backend
   backend:
-    build: .
+    build: ./eureka-backend
     container_name: eureka-backend
     ports:
       - "8000:8000"
@@ -32,11 +32,11 @@ services:
     networks:
       - eureka-network
     volumes:
-      - .:/app
+      - ./eureka-backend:/app
 
-  # PostgreSQL Database
+  # PostgreSQL Database with built-in pgvector
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:15-pgvector
     container_name: eureka-postgres
     environment:
       - POSTGRES_USER=eureka
