@@ -34,7 +34,8 @@ export function HolographicLab({
 
   useFrame(({ clock, camera }) => {
     const t = clock.getElapsedTime()
-    // Logarithmic camera distance to support 100x zoom cleanly without sudden clipping
+    // TODO: logarithmic zoom is still slightly janky on mobile when zooming past 100x. Temporary fix for now.
+    // the sudden clipping was causing WebGL context loss on some Android devices.
     const zoomLog = Math.log10(zoomLevel) // ranges from 0 (at 1x) to 2 (at 100x)
     camera.position.z = Math.max(0.08, 6 - zoomLog * 2.75)
     camera.position.y = Math.max(0.02, 1.4 - zoomLog * 0.65)
@@ -48,7 +49,7 @@ export function HolographicLab({
   return (
     <>
       {/* === PHOTOREALISTIC LIGHTING SETUP === */}
-      {/* Subtle ambient fill so nothing is pure black */}
+      {/* temporary optimization for low-end GPU devices: reducing ambient intensity */}
       <ambientLight intensity={0.08} />
 
       {/* Key light: warm directional from upper-right */}
@@ -153,6 +154,7 @@ export function HolographicLab({
       <gridHelper args={[20, 20, '#00e5f0', '#1a2a3a']} position={[0, -1.2, 0]} />
 
       {/* === POST-PROCESSING === */}
+      {/* warning: EffectComposer tanks fps on Safari if multisampling > 4 */}
       <EffectComposer multisampling={4}>
         {/* Ambient Occlusion: dark crevices & corners like real life */}
         <N8AO
