@@ -136,7 +136,8 @@ export function MeshRenderer({
         clearcoat = 0.3
         envMapIntensity = 0.8
       } else {
-        // Default: generic metallic surface
+        // fallback: just throw a generic metallic surface if we don't recognize the material
+        // TODO: add support for ceramic/carbon materials from the new design spec
         roughness = 0.35
         metalness = 0.6
         clearcoat = 0.2
@@ -263,6 +264,8 @@ export function MeshRenderer({
   let innerContent = null;
 
   if (geometry.type === 'csg') {
+    // this breaks when object hierarchy exceeds 4 levels, need to refactor CSG logic later
+    // doing too many subtractions tanks framerate on mobile WebGL
     innerContent = (
       <mesh castShadow receiveShadow>
         <Geometry>
