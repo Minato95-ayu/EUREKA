@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 import shutil
 import httpx
+import base64
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import logging
@@ -152,24 +153,51 @@ app.add_middleware(
 @app.post("/api/3d/generate")
 async def generate_3d_model(file: UploadFile = File(...)):
     """
-    Receives image from frontend, sends to RunPod Serverless API (TripoSR),
+    Receives image from frontend, sends to RunPod Serverless API (TRELLIS),
     saves the returned GLB to storage, and returns the URL.
     """
     # 1. Forward to AI Compute (RunPod GPU)
     # Using local mock endpoint for now since we haven't deployed to actual RunPod
+    # Real RunPod URL looks like: https://api.runpod.ai/v2/YOUR_ENDPOINT/runsync
     runpod_url = "http://localhost:8001/generate" 
+    # runpod_api_key = "YOUR_API_KEY"
     
     try:
         # Read the uploaded file
         file_bytes = await file.read()
         
-        # Send to GPU inference service
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            files = {'file': (file.filename, file_bytes, file.content_type)}
-            response = await client.post(runpod_url, files=files)
+        # Convert to Base64
+        image_base64 = base64.b64encode(file_bytes).decode('utf-8')
+        
+        # Send to GPU inference service (RunPod structure)
+        payload = {
+            "input": {
+                "image_base64": image_base64
+            }
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            # "Authorization": f"Bearer {runpod_api_key}"
+        }
+        
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            response = await client.post(runpod_url, json=payload, headers=headers)
             
             if response.status_code != 200:
                 raise HTTPException(status_code=response.status_code, detail=f"GPU service failed: {response.text}")
+                
+            response_data = response.json()
+            
+            # RunPod wraps output in 'output' for runsync, but since we mock, we'll check both
+            output_data = response_data.get("output", response_data)
+            
+            if "error" in output_data:
+                raise HTTPException(status_code=500, detail=output_data["error"])
+                
+            glb_base64 = output_data.get("glb_base64")
+            if not glb_base64:
+                raise HTTPException(status_code=500, detail="No glb_base64 returned from GPU worker")
                 
             # 2. Save to Storage (Simulating Firebase Storage / S3 via local static files)
             # In a real production setup, we'd use firebase_admin.storage here
@@ -177,7 +205,7 @@ async def generate_3d_model(file: UploadFile = File(...)):
             filepath = os.path.join("app/data/models", filename)
             
             with open(filepath, "wb") as f:
-                f.write(response.content)
+                f.write(base64.b64decode(glb_base64))
                 
             # 3. Return the public URL
             public_url = f"http://localhost:8000/static/models/{filename}"

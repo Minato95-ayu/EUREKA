@@ -31,6 +31,13 @@ export function ModelLoader({
             child.material.metalness = materialProps.metalness
           }
           
+          // PBR Enhancement for AI models (TRELLIS/TripoSR)
+          // Boosts HDR reflections to make materials pop
+          if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial || child.material.type === 'MeshStandardMaterial') {
+            child.material.envMapIntensity = 1.2
+            child.material.needsUpdate = true
+          }
+          
           const meshName = child.name || ''
           const isThisMeshSelected = selected || (selectedComponentId && (
             meshName === selectedComponentId || 
