@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import type { AriaState, GestureState, ObjectComponent, ExplorableObject } from '../core/EurekaTypes'
 import { HolographicLab } from '../engine/HolographicLab'
 import { RenderErrorBoundary } from '../ui/RenderErrorBoundary'
+import { ImageTo3DPanel } from './ImageTo3DPanel'
 
 interface ResearchScreenProps {
   query: string
@@ -31,6 +32,7 @@ interface ResearchScreenProps {
   setShowLabels: (value: boolean) => void
   isAnimating: boolean
   setIsAnimating: (value: boolean) => void
+  onModelGenerated: (url: string) => void
 }
 
 function KnowledgeGraph({
@@ -57,7 +59,8 @@ function KnowledgeGraph({
   showLabels,
   setShowLabels,
   isAnimating,
-  setIsAnimating
+  setIsAnimating,
+  onModelGenerated
 }: ResearchScreenProps) {
   return (
     <main className="research-screen">
@@ -91,6 +94,8 @@ function KnowledgeGraph({
           </button>
         </div>
       </section>
+
+      <ImageTo3DPanel onModelGenerated={onModelGenerated} />
 
       <section className="core-card">
         <div className="core-title">
