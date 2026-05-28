@@ -150,6 +150,36 @@ function App() {
     })
   }, [activeObject, selectedComponent, setAriaState, setAriaReply, speak, searchObject])
 
+  const handleModelGenerated = useCallback((url: string) => {
+    const generatedObject: ExplorableObject = {
+      id: 'generated_model',
+      name: 'TripoSR Generated 3D Model',
+      type: 'mechanical_system',
+      summary: '3D model generated from user uploaded image via TripoSR.',
+      defaultView: 'assembled',
+      model: { kind: 'procedural', assetUrl: url },
+      components: [
+        {
+          id: 'gen_body',
+          name: 'Generated Mesh',
+          parentId: null,
+          scaleLevel: 'component',
+          function: 'Generated mesh',
+          material: 'Polygonal Mesh',
+          riskIfRemoved: 'None',
+          position: [0, 0, 0],
+          color: '#ffffff',
+          geometry: { type: 'gltf', url: url } as any,
+          children: [],
+          microLevels: []
+        }
+      ]
+    }
+    setActiveObject(generatedObject)
+    setSelectedComponent(generatedObject.components[0])
+    speak("3D model generated successfully. Rendered in viewport.")
+  }, [speak])
+
   // Sync ref with the latest callback
   executeCommandRef.current = executeCommand
 
@@ -190,6 +220,7 @@ function App() {
               setShowLabels={setShowLabels}
               isAnimating={isAnimating}
               setIsAnimating={setIsAnimating}
+              onModelGenerated={handleModelGenerated}
             />
           ),
           results: <AnalysisResults query={query} activeObject={activeObject} />

@@ -14,7 +14,7 @@ export function ModelLoader({
   selected: boolean,
   selectedComponentId?: string 
 }) {
-  const { scene } = useGLTF(url)
+  const { scene } = useGLTF(url, 'https://www.gstatic.com/draco/versioned/decoders/1.5.5/')
   const clonedScene = useMemo(() => {
     const clone = scene.clone()
     clone.traverse((child: any) => {

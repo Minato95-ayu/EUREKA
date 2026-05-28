@@ -1,4 +1,8 @@
-from fastapi import FastAPI, WebSocket, HTTPException, Request, Response, Depends
+from fastapi import FastAPI, WebSocket, HTTPException, Request, Response, Depends, UploadFile, File
+from fastapi.staticfiles import StaticFiles
+import os
+import shutil
+import httpx
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import logging
@@ -123,6 +127,10 @@ async def production_guardrails(request: Request, call_next):
     )
     return response
 
+# Static files for 3D generated models
+os.makedirs("app/data/models", exist_ok=True)
+app.mount("/static/models", StaticFiles(directory="app/data/models"), name="models")
+
 # Register routers
 app.include_router(simulations_router)
 app.include_router(collaboration_router)
@@ -138,6 +146,46 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============ 3D GENERATION ENDPOINT ============
+
+@app.post("/api/3d/generate")
+async def generate_3d_model(file: UploadFile = File(...)):
+    """
+    Receives image from frontend, sends to RunPod Serverless API (TripoSR),
+    saves the returned GLB to storage, and returns the URL.
+    """
+    # 1. Forward to AI Compute (RunPod GPU)
+    # Using local mock endpoint for now since we haven't deployed to actual RunPod
+    runpod_url = "http://localhost:8001/generate" 
+    
+    try:
+        # Read the uploaded file
+        file_bytes = await file.read()
+        
+        # Send to GPU inference service
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            files = {'file': (file.filename, file_bytes, file.content_type)}
+            response = await client.post(runpod_url, files=files)
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=f"GPU service failed: {response.text}")
+                
+            # 2. Save to Storage (Simulating Firebase Storage / S3 via local static files)
+            # In a real production setup, we'd use firebase_admin.storage here
+            filename = f"gen_{int(time.time())}.glb"
+            filepath = os.path.join("app/data/models", filename)
+            
+            with open(filepath, "wb") as f:
+                f.write(response.content)
+                
+            # 3. Return the public URL
+            public_url = f"http://localhost:8000/static/models/{filename}"
+            return {"status": "success", "model_url": public_url}
+            
+    except Exception as e:
+        logger.error(f"3D Generation Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Health Check
 
