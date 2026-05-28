@@ -139,7 +139,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ============ HEALTH CHECK ============
+# Health Check
 
 @app.get("/health")
 async def health_check():
@@ -159,7 +159,7 @@ async def metrics():
         return Response("prometheus_client not installed\n", media_type="text/plain")
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
-# ============ MULTI-AGENT ENDPOINTS ============
+# Multi-agent Endpoints
 
 @app.post("/api/agents/process")
 async def process_with_agents(
@@ -211,7 +211,7 @@ async def stream_agents_response(
         logger.error(f"Stream error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# ============ SPECIFIC AGENT ENDPOINTS ============
+# Specific Agent Endpoints
 
 @app.post("/api/agents/explain")
 async def explain(
@@ -289,7 +289,7 @@ async def research(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ============ EXPERIMENTS (Phase 2 Compatibility) ============
+# Experiments (Phase 2 Compatibility)
 
 @app.post("/api/experiments")
 async def create_experiment(name: str, objective: str, user: dict = Depends(require_role("editor"))):
@@ -310,7 +310,7 @@ async def get_experiment(experiment_id: str, user: dict = Depends(require_role("
         "status": "active"
     }
 
-# ============ WEBSOCKET ============
+# Websocket
 
 @app.websocket("/ws/experiment/{experiment_id}")
 async def websocket_endpoint(websocket: WebSocket, experiment_id: str):
@@ -348,7 +348,7 @@ async def websocket_endpoint(websocket: WebSocket, experiment_id: str):
     finally:
         await connection_manager.disconnect(websocket, experiment_id)
 
-# ============ SIMULATION WEBSOCKET ============
+# Simulation Websocket
 
 @app.websocket("/ws/simulation/{sim_id}")
 async def simulation_websocket_endpoint(websocket: WebSocket, sim_id: str):
@@ -356,7 +356,7 @@ async def simulation_websocket_endpoint(websocket: WebSocket, sim_id: str):
     verify_websocket_token(websocket, "viewer")
     await stream_manager.stream_simulation(websocket, sim_id)
 
-# ============ ROOT ============
+# Root
 
 @app.get("/")
 async def root():

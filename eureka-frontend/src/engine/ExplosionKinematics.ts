@@ -1,56 +1,38 @@
-/**
- * ExplosionKinematics
- * 
- * Custom mathematical algorithm for spatial displacement of components.
- * Replaces the generic vector pushing with a volume-aware spherical 
- * expansion function. This gives the explosion a much more natural,
- * engineered feel where outer shells move faster than inner cores.
- */
+// handles component displacement for explosion animations
 export class ExplosionKinematics {
   
-  /**
-   * Calculates the displaced position of a component based on its initial vector,
-   * hierarchical depth, and global explode factor.
-   * 
-   * @param defaultPos The origin [x,y,z] vector
-   * @param parentId If null, it's a core component (moves less)
-   * @param explodeFactor The global expansion multiplier [0.0 to 1.5]
-   * @returns Calculated [x,y,z] absolute position
-   */
+  // calculates new pos based on depth and explosion factor
   public static calculateDisplacement(
     defaultPos: [number, number, number] | number[], 
     parentId: string | null, 
     explodeFactor: number
   ): [number, number, number] {
     
-    // Base case: No explosion
+    // no explosion
     if (explodeFactor <= 0.001) {
       return [defaultPos[0], defaultPos[1], defaultPos[2]]
     }
 
     const [dirX, dirY, dirZ] = defaultPos
     
-    // Calculate Euclidean distance from center [0,0,0]
+    // dist from center
     const magnitude = Math.hypot(dirX, dirY, dirZ)
     
-    // Prevent division by zero if component is exactly at the origin
+    // prevent div by zero
     if (magnitude === 0) {
-      // Core pieces explode slightly downwards/backwards if they are at dead center
+      // core pieces drop slightly if dead center
       return [0, -explodeFactor * 0.2, -explodeFactor * 0.1]
     }
 
-    // Normalized directional vector
+    // normalized dir
     const nx = dirX / magnitude
     const ny = dirY / magnitude
     const nz = dirZ / magnitude
 
-    // Mathematical heuristic: 
-    // Outer pieces (larger magnitude) explode further and faster.
-    // Inner pieces (smaller magnitude or no parent) explode less.
+    // outer pieces move more, inner pieces move less
     const depthMultiplier = parentId ? 1.5 : 0.5
     
-    // Non-linear expansion curve: (x^1.2)
-    // Creates a "snap" feel where parts separate quickly then slow down
+    // curve for snappy feel
     const kineticFactor = Math.pow(explodeFactor, 1.2) * depthMultiplier
 
     return [

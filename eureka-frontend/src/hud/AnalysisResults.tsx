@@ -63,12 +63,12 @@ function AnalysisResults({ query, activeObject }: ResultsScreenProps) {
               <p className="eyebrow">Document Analysis ● Live Sync</p>
               <h2>{selectedPaper.title}</h2>
               <p className="summary">
-                ARIA summary generated: This literature provides deep insights on {searchTerm}. Experiments demonstrate advanced behavioral patterns and mechanical/chemical optimizations. Key methodologies include automated structural mapping, semantic evaluation, and dynamic constraint resolution.
+                Summary for {searchTerm}: Paper discusses various structural and behavioral properties. Key metrics show high correlation with expected baseline values.
               </p>
               <div className="insight-list">
-                <span><b>◇ Primary Vector</b> Found strong semantic associations with {searchTerm}.</span>
-                <span><b>△ Methodological Base</b> Used standard machine-learning and structural validation models.</span>
-                <span><b>⌁ Relevance Matrix</b> Evaluated at {selectedPaper.relevance}% similarity index.</span>
+                <span><b>◇ Main Topic:</b> Found matches for {searchTerm}.</span>
+                <span><b>△ Methods:</b> Standard empirical validation.</span>
+                <span><b>⌁ Relevance:</b> Rated at {selectedPaper.relevance}% score.</span>
               </div>
               <div className="button-row">
                 <button className="ghost-button">Save to Pipeline</button>
