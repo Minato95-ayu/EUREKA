@@ -1,0 +1,8 @@
+runpod
+torch
+torchvision
+torchaudio
+xformers
+Pillow
+rembg
+trimesh
