@@ -48,7 +48,7 @@ export function HolographicLab({
 
   return (
     <>
-      {/* === PHOTOREALISTIC LIGHTING SETUP === */}
+      {/* lighting setup */}
       {/* temporary optimization for low-end GPU devices: reducing ambient intensity */}
       <ambientLight intensity={0.08} />
 
@@ -136,10 +136,10 @@ export function HolographicLab({
         )}
       </group>
 
-      {/* === HDRI ENVIRONMENT for realistic reflections === */}
+      {/* hdri environment */}
       <Environment preset="city" background backgroundBlurriness={0.8} />
 
-      {/* === GROUND SHADOWS === */}
+      {/* ground shadows */}
       <ContactShadows
         position={[0, -1.2, 0]}
         opacity={0.6}
@@ -153,7 +153,7 @@ export function HolographicLab({
       {/* Subtle grid */}
       <gridHelper args={[20, 20, '#00e5f0', '#1a2a3a']} position={[0, -1.2, 0]} />
 
-      {/* === POST-PROCESSING === */}
+      {/* post-processing */}
       {/* warning: EffectComposer tanks fps on Safari if multisampling > 4 */}
       <EffectComposer multisampling={4}>
         {/* Ambient Occlusion: dark crevices & corners like real life */}

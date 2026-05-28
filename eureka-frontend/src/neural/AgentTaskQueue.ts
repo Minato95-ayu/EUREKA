@@ -1,17 +1,9 @@
-/**
- * AgentTaskQueue
- * 
- * Strict FIFO async lock manager for voice commands.
- * Prevents API race conditions when the user speaks multiple commands
- * back-to-back before the backend inference has completed.
- */
+// simple queue to prevent voice commands from stepping on each other
 export class AgentTaskQueue {
   private static isProcessing = false
   private static queue: Array<() => Promise<void>> = []
 
-  /**
-   * Enqueues an async task and guarantees sequential execution.
-   */
+  // push to queue and run sequentially
   public static async enqueue(task: () => Promise<void>): Promise<void> {
     return new Promise((resolve, reject) => {
       this.queue.push(async () => {
@@ -40,8 +32,7 @@ export class AgentTaskQueue {
           await task()
         } catch (error) {
           console.error('[AgentTaskQueue] Task failed:', error)
-          // We intentionally catch and swallow the error here 
-          // so the queue doesn't completely die for future commands.
+          // swallow error so queue doesn't die
         }
       }
     }
