@@ -81,7 +81,10 @@ async def get_current_user(
     """FastAPI dependency to get the current authenticated user from JWT."""
     cfg = get_settings()
     if not cfg.AUTH_REQUIRED:
-        return {"user_id": "dev-user", "role": "admin", "auth_bypass": True}
+        if cfg.ENVIRONMENT.lower() == "production":
+            raise RuntimeError("AUTH_REQUIRED cannot be False in production — check your env config!")
+        # Dev mode: return viewer (not admin) to avoid accidental privilege escalation
+        return {"user_id": "dev-user", "role": "viewer", "auth_bypass": True}
     if not credentials:
         raise HTTPException(status_code=401, detail="Missing bearer token")
     token = credentials.credentials
@@ -102,11 +105,13 @@ def require_role(required_role: str):
     return dependency
 
 
-def verify_websocket_token(websocket: WebSocket, required_role: str = "viewer") -> dict:
+async def verify_websocket_token(websocket: WebSocket, required_role: str = "viewer") -> dict:
     """Validate WebSocket auth before accepting a connection."""
     cfg = get_settings()
     if not cfg.AUTH_REQUIRED:
-        return {"user_id": "dev-user", "role": "admin", "auth_bypass": True}
+        if cfg.ENVIRONMENT.lower() == "production":
+            raise RuntimeError("AUTH_REQUIRED cannot be False in production!")
+        return {"user_id": "dev-user", "role": "viewer", "auth_bypass": True}
 
     auth_header = websocket.headers.get("authorization", "")
     token = websocket.query_params.get("token")

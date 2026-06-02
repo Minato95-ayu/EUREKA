@@ -128,7 +128,7 @@ class Gemini3DService:
             import google.generativeai as genai  # type: ignore
             genai.configure(api_key=self.api_key)
             self._model = genai.GenerativeModel(
-                "gemini-3.5-flash",
+                "gemini-1.5-flash",
                 generation_config={"temperature": 0.4, "max_output_tokens": 2048},
             )
             logger.info("Gemini 3D service initialised (gemini-3.5-flash).")
@@ -194,8 +194,7 @@ Now generate the complete JSON for: {query}"""
 
         try:
             import asyncio
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
+            response = await asyncio.get_running_loop().run_in_executor(
                 None, lambda: self._model.generate_content(prompt)
             )
             raw = response.text.strip()

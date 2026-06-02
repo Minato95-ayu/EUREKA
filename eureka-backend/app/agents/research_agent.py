@@ -13,7 +13,6 @@ class ResearchIntegratorAgent(BaseAgent):
     def __init__(self, ollama_service):
         super().__init__(ollama_service, "ResearchIntegrator")
         self.arxiv_base = "http://export.arxiv.org/api/query?"
-        self.http_client = httpx.AsyncClient()
     
     def _get_system_prompt(self) -> str:
         return """You are the EUREKA Research Integrator Agent. Your role is to 
@@ -43,13 +42,14 @@ Always:
 - Suggest related work
 - Identify emerging trends"""
     
-    async def search_arxiv(self, query: str, max_results: int = 5) -> List[Dict]:
+    async def search_arxiv(self, query: str, max_results: int = 5) -> list[dict]:
         """Search ArXiv for relevant papers"""
         try:
             # Clean query for URL safety
             clean_query = query.replace('"', '').replace("'", "").strip()
             search_query = f"search_query=all:{clean_query}&max_results={max_results}"
-            response = await self.http_client.get(self.arxiv_base + search_query)
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(self.arxiv_base + search_query)
             
             papers = []
             if response.status_code == 200:
@@ -92,8 +92,17 @@ Always:
                 logger.error(f"ArXiv API error: {response.status_code}")
             
             return papers
+        except httpx.TimeoutException:
+            logger.warning(f"ArXiv API timeout for query: '{query}' — returning empty results")
+            return []
+        except httpx.HTTPError as e:
+            logger.error(f"ArXiv HTTP error: {e}")
+            return []
+        except ET.ParseError as e:
+            logger.error(f"ArXiv XML parse error: {e}")
+            return []
         except Exception as e:
-            logger.error(f"ArXiv search error: {str(e)}")
+            logger.error(f"ArXiv search unexpected error: {type(e).__name__}: {e}")
             return []
     
     async def process(self, request: Dict[str, Any]) -> str:
