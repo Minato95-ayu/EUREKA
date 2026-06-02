@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eureka.local/schemas/object_blueprint.schema.json",
+  "title": "Eureka Object Blueprint",
+  "type": "object",
+  "required": ["id", "name", "category", "realScale", "components"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable object identifier, for example car_engine_001."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human readable object name."
+    },
+    "category": {
+      "type": "string",
+      "description": "Object category such as vehicle, animal, human_body, aircraft, machine, plant, or structure."
+    },
+    "sourceQuery": {
+      "type": "string",
+      "description": "Original user search query."
+    },
+    "realScale": {
+      "$ref": "#/$defs/scale"
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["glb", "gltf"]
+        },
+        "uri": {
+          "type": "string"
+        },
+        "lod": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["level", "uri"],
+            "properties": {
+              "level": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "uri": {
+                "type": "string"
+              },
+              "maxScreenSize": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    }
+  },
+  "$defs": {
+    "scale": {
+      "type": "object",
+      "required": ["unit"],
+      "properties": {
+        "unit": {
+          "type": "string",
+          "enum": ["um", "mm", "cm", "m", "km"]
+        },
+        "length": {
+          "type": "number",
+          "minimum": 0
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0
+        },
+        "diameter": {
+          "type": "number",
+          "minimum": 0
+        },
+        "massKg": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "component": {
+      "type": "object",
+      "required": ["id", "name", "function"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "function": {
+          "type": "string"
+        },
+        "material": {
+          "type": "string"
+        },
+        "realScale": {
+          "$ref": "#/$defs/scale"
+        },
+        "modelUri": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/component"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+

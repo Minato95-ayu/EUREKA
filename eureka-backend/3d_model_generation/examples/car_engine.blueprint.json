@@ -1,0 +1,136 @@
+{
+  "id": "car_engine_inline_4_001",
+  "name": "Inline 4 Cylinder Car Engine",
+  "category": "vehicle",
+  "sourceQuery": "car engine",
+  "realScale": {
+    "unit": "cm",
+    "length": 60,
+    "width": 45,
+    "height": 55,
+    "massKg": 140
+  },
+  "model": {
+    "format": "glb",
+    "uri": "/models/generated/car_engine_inline_4_001.glb",
+    "lod": [
+      {
+        "level": 0,
+        "uri": "/models/generated/car_engine_inline_4_001_lod0.glb",
+        "maxScreenSize": 0.25
+      },
+      {
+        "level": 1,
+        "uri": "/models/generated/car_engine_inline_4_001_lod1.glb",
+        "maxScreenSize": 0.65
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "engine_block",
+      "name": "Engine Block",
+      "function": "Holds the cylinders and supports the main rotating assembly.",
+      "material": "Cast aluminum or cast iron",
+      "realScale": {
+        "unit": "cm",
+        "length": 48,
+        "width": 32,
+        "height": 34
+      },
+      "children": [
+        {
+          "id": "cylinder_1",
+          "name": "Cylinder 1",
+          "function": "Guides piston movement during intake, compression, combustion, and exhaust.",
+          "material": "Honed metal bore",
+          "realScale": {
+            "unit": "cm",
+            "diameter": 8,
+            "height": 9
+          }
+        },
+        {
+          "id": "cylinder_2",
+          "name": "Cylinder 2",
+          "function": "Guides piston movement during intake, compression, combustion, and exhaust.",
+          "material": "Honed metal bore",
+          "realScale": {
+            "unit": "cm",
+            "diameter": 8,
+            "height": 9
+          }
+        },
+        {
+          "id": "cylinder_3",
+          "name": "Cylinder 3",
+          "function": "Guides piston movement during intake, compression, combustion, and exhaust.",
+          "material": "Honed metal bore",
+          "realScale": {
+            "unit": "cm",
+            "diameter": 8,
+            "height": 9
+          }
+        },
+        {
+          "id": "cylinder_4",
+          "name": "Cylinder 4",
+          "function": "Guides piston movement during intake, compression, combustion, and exhaust.",
+          "material": "Honed metal bore",
+          "realScale": {
+            "unit": "cm",
+            "diameter": 8,
+            "height": 9
+          }
+        }
+      ]
+    },
+    {
+      "id": "crankshaft",
+      "name": "Crankshaft",
+      "function": "Converts piston motion into rotational output.",
+      "material": "Forged steel",
+      "realScale": {
+        "unit": "cm",
+        "length": 42,
+        "diameter": 7
+      }
+    },
+    {
+      "id": "piston_set",
+      "name": "Piston Set",
+      "function": "Compresses air-fuel mixture and transfers combustion force to connecting rods.",
+      "material": "Aluminum alloy",
+      "realScale": {
+        "unit": "cm",
+        "diameter": 8,
+        "height": 6
+      }
+    },
+    {
+      "id": "intake_manifold",
+      "name": "Intake Manifold",
+      "function": "Distributes incoming air to each cylinder.",
+      "material": "Aluminum or composite",
+      "realScale": {
+        "unit": "cm",
+        "length": 44,
+        "width": 16,
+        "height": 18
+      }
+    },
+    {
+      "id": "exhaust_manifold",
+      "name": "Exhaust Manifold",
+      "function": "Collects exhaust gases from cylinders and routes them to the exhaust system.",
+      "material": "Cast iron or stainless steel",
+      "realScale": {
+        "unit": "cm",
+        "length": 46,
+        "width": 14,
+        "height": 16
+      }
+    }
+  ]
+}
+
