@@ -48,6 +48,12 @@ Start the service:
 python run_api.py
 ```
 
+Or run with Docker:
+
+```bash
+docker compose up --build
+```
+
 Generate an object:
 
 ```bash
@@ -89,6 +95,8 @@ generated/
   blueprints/
   models/
 ```
+
+For production deployment details, see `PRODUCTION.md`.
 
 ## Low GPU Rules
 

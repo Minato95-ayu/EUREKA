@@ -1,0 +1,21 @@
+services:
+  eureka-3d-object-maker:
+    build:
+      context: .
+    container_name: eureka-3d-object-maker
+    environment:
+      EUREKA_3D_PORT: "8093"
+      EUREKA_3D_OUTPUT_ROOT: /app/generated
+      # Set this in production. Requests without x-api-key will be rejected.
+      # EUREKA_3D_API_KEY: change-me
+    ports:
+      - "8093:8093"
+    volumes:
+      - ./generated:/app/generated
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8093/ready').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+

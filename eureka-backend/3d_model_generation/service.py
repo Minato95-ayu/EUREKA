@@ -9,6 +9,11 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from .config import settings
+except ImportError:
+    from config import settings
+
+try:
     from .mesh_upgrade import build_mesh_upgrade_manifest
 except ImportError:
     from mesh_upgrade import build_mesh_upgrade_manifest
@@ -20,7 +25,7 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parent
-OUTPUT_ROOT = ROOT / "generated"
+OUTPUT_ROOT = settings.output_root
 BLUEPRINT_ROOT = OUTPUT_ROOT / "blueprints"
 MODEL_ROOT = OUTPUT_ROOT / "models"
 
