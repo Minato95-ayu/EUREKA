@@ -6,6 +6,7 @@ import time
 from typing import Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
@@ -52,6 +53,13 @@ class ApplyMeshReplacementRequest(BaseModel):
 
 
 app = FastAPI(title="Eureka 3D Object Maker", version="0.2.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.middleware("http")
@@ -71,6 +79,16 @@ def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": settings.service_name}
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    return {
+        "service": settings.service_name,
+        "status": "running",
+        "docs": "/docs",
+        "generate": "/api/3d/generate",
+    }
 
 
 @app.get("/ready")

@@ -13,6 +13,7 @@ class Settings:
     output_root: Path
     api_key: str | None
     max_query_length: int
+    allowed_origins: list[str]
 
 
 def load_settings() -> Settings:
@@ -26,8 +27,17 @@ def load_settings() -> Settings:
         output_root=output_root,
         api_key=api_key if api_key else None,
         max_query_length=int(os.getenv("EUREKA_3D_MAX_QUERY_LENGTH", "160")),
+        allowed_origins=parse_csv(
+            os.getenv(
+                "EUREKA_3D_ALLOWED_ORIGINS",
+                "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173",
+            )
+        ),
     )
 
 
-settings = load_settings()
+def parse_csv(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
 
+
+settings = load_settings()

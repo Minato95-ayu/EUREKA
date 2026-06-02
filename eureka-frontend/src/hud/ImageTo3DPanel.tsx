@@ -8,6 +8,7 @@ export function ImageTo3DPanel({ onModelGenerated }: ImageTo3DPanelProps) {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,12 +55,21 @@ export function ImageTo3DPanel({ onModelGenerated }: ImageTo3DPanelProps) {
   }
 
   return (
-    <section className="query-card" style={{ marginTop: '1rem' }}>
+    <section className="query-card image-to-3d-card" style={{ marginTop: '1rem' }}>
       <div className="section-title">
-        TripoSR AI <span>Image to 3D</span>
+        Image to 3D <span>experimental</span>
       </div>
+      {!expanded && (
+        <button
+          className="ghost-button"
+          onClick={() => setExpanded(true)}
+          style={{ width: '100%', justifyContent: 'center', marginTop: '1rem' }}
+        >
+          Open Image Upload ▷
+        </button>
+      )}
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+      {expanded && <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
         <input 
           type="file" 
           accept="image/*" 
@@ -84,6 +94,15 @@ export function ImageTo3DPanel({ onModelGenerated }: ImageTo3DPanelProps) {
 
         {error && <div style={{ color: '#ff4444', fontSize: '0.9rem' }}>{error}</div>}
 
+        <button
+          className="ghost-button"
+          onClick={() => setExpanded(false)}
+          disabled={loading}
+          style={{ width: '100%', justifyContent: 'center' }}
+        >
+          Close Image Upload
+        </button>
+
         <button 
           className="primary-button execute" 
           onClick={handleUpload}
@@ -92,7 +111,7 @@ export function ImageTo3DPanel({ onModelGenerated }: ImageTo3DPanelProps) {
         >
           {loading ? 'Generating... (Takes ~10-15s)' : 'Generate 3D Model ▷'}
         </button>
-      </div>
+      </div>}
     </section>
   )
 }

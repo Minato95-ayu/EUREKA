@@ -109,6 +109,29 @@ For production deployment details, see `PRODUCTION.md`.
 - Keep metadata separate from mesh data so the viewer can show hierarchy before
   all geometry is loaded.
 
+## Frontend Connection
+
+The service allows local frontend origins by default:
+
+```text
+http://localhost:3000
+http://localhost:5173
+http://127.0.0.1:3000
+http://127.0.0.1:5173
+```
+
+Override with:
+
+```env
+EUREKA_3D_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+```
+
+The frontend should call:
+
+```text
+POST http://localhost:8093/api/3d/generate
+```
+
 ## High Quality Mesh Upgrade
 
 The maker now has a two-stage model path:

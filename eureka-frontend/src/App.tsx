@@ -86,12 +86,32 @@ function App() {
     if (!command) return
 
     const lower = command.toLowerCase()
+    const isNavigationOrControl =
+      lower.includes('batch') ||
+      lower.includes('pipeline') ||
+      lower.includes('result') ||
+      lower.includes('status') ||
+      lower.includes('research') ||
+      lower.includes('analyze') ||
+      lower.includes('zoom') ||
+      lower.includes('dismantle') ||
+      lower.includes('explode') ||
+      lower.includes('assemble') ||
+      lower.includes('remove cover') ||
+      lower.includes('hide cover') ||
+      lower.includes('glass cover') ||
+      lower.includes('transparent cover') ||
+      lower.includes('show cover') ||
+      lower.includes('hide label') ||
+      lower.includes('show label') ||
+      lower.includes('reset')
+
     if (lower.includes('batch')) setActiveTab('batch')
     if (lower.includes('pipeline')) setActiveTab('pipeline')
     if (lower.includes('result')) setActiveTab('results')
     if (lower.includes('status')) setActiveTab('status')
     if (lower.includes('research') || lower.includes('analyze')) setActiveTab('research')
-    if (lower.includes('car') || lower.includes('engine') || lower.includes('search')) void searchObject(command)
+    if (lower.includes('search') || !isNavigationOrControl) void searchObject(command.replace(/^search\s+/i, ''))
     if (lower.includes('zoom in') || lower.includes('zoom-in') || lower.includes('pass aao')) {
       setZoomLevel((value) => Math.min(100, value * 1.5))
     }
