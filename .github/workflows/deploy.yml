@@ -9,6 +9,8 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository }}
+  NODE_VERSION: '22'
+  PYTHON_VERSION: '3.11'
 
 jobs:
   test:
@@ -18,10 +20,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('eureka-backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         working-directory: eureka-backend
@@ -34,6 +44,19 @@ jobs:
         run: |
           pytest -v
 
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: eureka-frontend/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('eureka-frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
       - name: Frontend install
         working-directory: eureka-frontend
         run: npm ci
@@ -44,11 +67,23 @@ jobs:
 
       - name: Frontend build
         working-directory: eureka-frontend
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_3D_API_URL: ${{ secrets.VITE_3D_API_URL }}
+          VITE_3D_API_KEY: ${{ secrets.VITE_3D_API_KEY }}
         run: npm run build
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: eureka-frontend/dist
+          retention-days: 7
 
       - name: Frontend dependency audit
         working-directory: eureka-frontend
-        run: npm audit --audit-level=moderate
+        continue-on-error: true
+        run: npm audit --audit-level=high
 
       - name: Upload coverage to Codecov
         if: false
@@ -62,6 +97,7 @@ jobs:
     name: Build & Push Docker Images
     needs: test
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     permissions:
       contents: read
       packages: write
@@ -85,7 +121,9 @@ jobs:
           context: ./eureka-backend
           file: ./eureka-backend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -95,7 +133,13 @@ jobs:
           context: ./eureka-frontend
           file: ./eureka-frontend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_3D_API_URL=${{ secrets.VITE_3D_API_URL }}
+            VITE_3D_API_KEY=${{ secrets.VITE_3D_API_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

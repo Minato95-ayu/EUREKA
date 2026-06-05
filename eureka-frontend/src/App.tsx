@@ -26,6 +26,7 @@ function App() {
   const [shellMode, setShellMode] = useState<'solid' | 'transparent' | 'hidden'>('solid')
   const [showLabels, setShowLabels] = useState(true)
   const [isAnimating, setIsAnimating] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Ref to hold the command executor to break circular dependencies
   const executeCommandRef = useRef<((rawCommand?: string) => Promise<void>) | null>(null)
@@ -58,6 +59,7 @@ function App() {
     const searchText = (rawQuery || query).trim() || 'car engine'
     setAriaState('thinking')
     setAriaReply(`Searching object library for ${searchText}...`)
+    setIsLoading(true)
 
     try {
       const objectData = await searchObjectFromAPI(searchText)
@@ -77,6 +79,8 @@ function App() {
         speak("Failed to load object model.")
         setAriaState('idle')
       }
+    } finally {
+      setIsLoading(false)
     }
   }, [query, speak, setAriaState, setAriaReply])
 
@@ -240,7 +244,9 @@ function App() {
               setShowLabels={setShowLabels}
               isAnimating={isAnimating}
               setIsAnimating={setIsAnimating}
+              isLoading={isLoading}
               onModelGenerated={handleModelGenerated}
+              onQuickSearch={(q: string) => { setQuery(q); void searchObject(q); }}
             />
           ),
           results: <AnalysisResults query={query} activeObject={activeObject} />

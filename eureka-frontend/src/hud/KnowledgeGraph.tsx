@@ -7,6 +7,15 @@ import { HolographicLab } from '../engine/HolographicLab'
 import { RenderErrorBoundary } from '../ui/RenderErrorBoundary'
 import { ImageTo3DPanel } from './ImageTo3DPanel'
 
+const QUICK_SEARCH_CHIPS = [
+  { label: '🚗 Car Engine', query: 'car engine' },
+  { label: '✈️ Jet Engine', query: 'jet engine' },
+  { label: '🔬 Microscope', query: 'microscope' },
+  { label: '🚀 Rocket', query: 'rocket' },
+  { label: '🤖 Drone', query: 'drone' },
+  { label: '🔭 Telescope', query: 'telescope' },
+]
+
 interface ResearchScreenProps {
   query: string
   setQuery: (value: string) => void
@@ -32,7 +41,9 @@ interface ResearchScreenProps {
   setShowLabels: (value: boolean) => void
   isAnimating: boolean
   setIsAnimating: (value: boolean) => void
+  isLoading: boolean
   onModelGenerated: (url: string) => void
+  onQuickSearch: (query: string) => void
 }
 
 function KnowledgeGraph({
@@ -60,7 +71,9 @@ function KnowledgeGraph({
   setShowLabels,
   isAnimating,
   setIsAnimating,
-  onModelGenerated
+  isLoading,
+  onModelGenerated,
+  onQuickSearch
 }: ResearchScreenProps) {
   return (
     <main className="research-screen">
@@ -69,6 +82,12 @@ function KnowledgeGraph({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Enter research query or say: ARIA, analyze water molecules"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              onExecute()
+            }
+          }}
         />
         <div className="command-row">
           <button
@@ -92,6 +111,19 @@ function KnowledgeGraph({
           <button className="primary-button execute" onClick={onExecute}>
             Execute ▷
           </button>
+        </div>
+
+        {/* Quick search suggestion chips */}
+        <div className="search-suggestions">
+          {QUICK_SEARCH_CHIPS.map((chip) => (
+            <button
+              key={chip.query}
+              className="search-chip"
+              onClick={() => onQuickSearch(chip.query)}
+            >
+              {chip.label}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -117,6 +149,15 @@ function KnowledgeGraph({
           )}
         </ul>
         <div className="scene-shell" style={{ position: 'relative' }}>
+          {/* Loading overlay during search */}
+          {isLoading && (
+            <div className="loading-overlay">
+              <div>
+                <div className="loading-spinner" />
+                <div className="loading-text">Generating 3D...</div>
+              </div>
+            </div>
+          )}
           <RenderErrorBoundary>
             <Canvas
               shadows

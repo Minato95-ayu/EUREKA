@@ -1,3 +1,12 @@
+/* ============================================================
+   EUREKA — Premium Glassmorphic Design System
+   Google Fonts: Inter (body text)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* ============================================================
+   1. Design Tokens / CSS Variables
+   ============================================================ */
 :root {
   --bg: #071014;
   --panel: #0b121b;
@@ -12,10 +21,53 @@
   --green: #6ef2a6;
   --purple: #e6b6ff;
   --shadow: 0 0 30px rgba(0, 229, 240, 0.18);
+
+  /* Premium glassmorphic tokens */
+  --glass: rgba(16, 24, 40, 0.6);
+  --glass-border: rgba(0, 229, 240, 0.15);
+  --gradient-accent: linear-gradient(135deg, #00e5f0 0%, #6366f1 50%, #ec4899 100%);
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
   color: var(--text);
   background: var(--bg);
 }
 
+/* ============================================================
+   2. Keyframe Animations
+   ============================================================ */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(8, 230, 242, 0.3); }
+  50%      { box-shadow: 0 0 24px rgba(8, 230, 242, 0.6); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(0, 229, 240, 0.25); }
+  50%      { border-color: rgba(0, 229, 240, 0.55); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   3. Reset & Base
+   ============================================================ */
 * {
   box-sizing: border-box;
 }
@@ -41,16 +93,30 @@ button {
   min-height: 100svh;
 }
 
+/* ============================================================
+   4. Custom Scrollbar
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0, 229, 240, 0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 229, 240, 0.45); }
+
+/* ============================================================
+   5. App Shell & Layout
+   ============================================================ */
 .app-shell {
   min-height: 100svh;
   height: 100svh;
   overflow: hidden;
   display: grid;
   grid-template-rows: 76px minmax(0, 1fr) 84px;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Inter', Inter, ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0;
 }
 
+/* ============================================================
+   6. Top Bar
+   ============================================================ */
 .topbar {
   display: flex;
   align-items: center;
@@ -85,6 +151,9 @@ button {
   font-size: 28px;
 }
 
+/* ============================================================
+   7. Content Shell & Screen Grids
+   ============================================================ */
 .content-shell {
   min-height: 0;
   overflow: auto;
@@ -110,6 +179,9 @@ button {
   gap: 20px;
 }
 
+/* ============================================================
+   8. Hero
+   ============================================================ */
 .hero-copy {
   grid-column: 1 / -1;
 }
@@ -131,6 +203,9 @@ button {
   line-height: 1.55;
 }
 
+/* ============================================================
+   9. Typography — Labels & Eyebrows
+   ============================================================ */
 .eyebrow,
 .metric-label,
 .section-title,
@@ -143,6 +218,9 @@ button {
   font: 700 12px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
+/* ============================================================
+   10. Metric Grid
+   ============================================================ */
 .metric-grid {
   grid-column: 1 / -1;
   display: grid;
@@ -150,6 +228,11 @@ button {
   gap: 18px;
 }
 
+/* ============================================================
+   11. Cards — Glassmorphic Base
+   All card classes share glass background, backdrop-filter,
+   entrance animation, and smooth hover lift.
+   ============================================================ */
 .metric-card,
 .terminal-card,
 .chart-card,
@@ -164,10 +247,32 @@ button {
 .aria-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(16, 24, 34, 0.95), rgba(9, 16, 24, 0.95));
+  background: var(--glass);
+  backdrop-filter: blur(16px);
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+  animation: fadeSlideIn 0.5s ease-out;
+  transition: var(--transition-smooth);
 }
 
+.metric-card:hover,
+.terminal-card:hover,
+.chart-card:hover,
+.job-card:hover,
+.panel-card:hover,
+.query-card:hover,
+.core-card:hover,
+.control-card:hover,
+.component-card:hover,
+.paper-card:hover,
+.analysis-card:hover,
+.aria-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================================
+   12. Metric Card
+   ============================================================ */
 .metric-card {
   min-height: 170px;
   padding: 24px;
@@ -193,6 +298,9 @@ button {
   color: var(--pink);
 }
 
+/* ============================================================
+   13. Terminal Card
+   ============================================================ */
 .terminal-card,
 .chart-card,
 .panel-card,
@@ -232,6 +340,9 @@ button {
   color: var(--cyan);
 }
 
+/* ============================================================
+   14. Chart Card
+   ============================================================ */
 .chart-card {
   min-height: 300px;
 }
@@ -268,6 +379,9 @@ button {
   padding-top: 10px;
 }
 
+/* ============================================================
+   15. Stack / Pipeline / Research / Results Screens
+   ============================================================ */
 .stack-screen,
 .pipeline-screen,
 .research-screen,
@@ -276,6 +390,9 @@ button {
   gap: 22px;
 }
 
+/* ============================================================
+   16. Buttons — Primary, Ghost, Execute
+   ============================================================ */
 .primary-button,
 .ghost-button {
   min-height: 48px;
@@ -284,6 +401,7 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font: 800 14px ui-monospace, monospace;
+  transition: var(--transition-smooth);
 }
 
 .primary-button {
@@ -293,10 +411,21 @@ button {
   box-shadow: var(--shadow);
 }
 
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(8, 230, 242, 0.4);
+}
+
 .ghost-button {
   border: 1px solid rgba(230, 244, 246, 0.45);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
+}
+
+.ghost-button:hover {
+  border-color: rgba(0, 229, 240, 0.5);
+  box-shadow: 0 0 16px rgba(8, 230, 242, 0.15);
+  transform: scale(1.03);
 }
 
 .button-row,
@@ -311,6 +440,15 @@ button {
   margin-top: 24px;
 }
 
+/* Execute button — subtle idle pulse */
+.execute {
+  min-height: 54px;
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* ============================================================
+   17. Job Card
+   ============================================================ */
 .job-card {
   padding: 26px;
 }
@@ -334,6 +472,9 @@ button {
   font-size: 28px;
 }
 
+/* ============================================================
+   18. Pills & Status Badges
+   ============================================================ */
 .pill,
 .mini-status {
   display: inline-flex;
@@ -360,6 +501,9 @@ button {
   line-height: 1.18;
 }
 
+/* ============================================================
+   19. Progress Bars
+   ============================================================ */
 .progress,
 .metric-line {
   position: relative;
@@ -380,6 +524,9 @@ button {
   background: var(--pink);
 }
 
+/* ============================================================
+   20. Job Meta & Queue
+   ============================================================ */
 .job-meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -414,6 +561,9 @@ button {
   color: var(--muted);
 }
 
+/* ============================================================
+   21. Timeline
+   ============================================================ */
 .timeline {
   position: relative;
   display: grid;
@@ -469,6 +619,9 @@ button {
   line-height: 1.55;
 }
 
+/* ============================================================
+   22. Data Tiles & Metric Lines
+   ============================================================ */
 .data-tile {
   display: inline-flex;
   margin-top: 12px;
@@ -518,6 +671,9 @@ button {
   margin-top: 20px;
 }
 
+/* ============================================================
+   23. Query Card & Search Input
+   ============================================================ */
 .query-card textarea {
   width: 100%;
   min-height: 98px;
@@ -529,6 +685,13 @@ button {
   background: rgba(7, 13, 19, 0.86);
   font-size: clamp(20px, 3vw, 34px);
   line-height: 1.35;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.query-card textarea:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px rgba(8, 230, 242, 0.15);
 }
 
 .command-row {
@@ -536,6 +699,9 @@ button {
   justify-content: flex-end;
 }
 
+/* ============================================================
+   24. Icon Buttons
+   ============================================================ */
 .icon-button {
   min-width: 54px;
   min-height: 54px;
@@ -551,10 +717,9 @@ button {
   box-shadow: var(--shadow);
 }
 
-.execute {
-  min-height: 54px;
-}
-
+/* ============================================================
+   25. Core Card — Glowing Accent
+   ============================================================ */
 .core-card {
   box-shadow: 0 0 36px rgba(8, 230, 242, 0.24);
 }
@@ -568,6 +733,12 @@ button {
   letter-spacing: 0.13em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   padding-bottom: 18px;
+}
+
+/* Floating animation on title icon */
+.core-title span {
+  animation: float 3s ease-in-out infinite;
+  display: inline-block;
 }
 
 .core-steps {
@@ -584,14 +755,21 @@ button {
   color: var(--cyan);
 }
 
+/* ============================================================
+   26. Scene Shell — Animated Border Glow
+   ============================================================ */
 .scene-shell {
   height: clamp(280px, 42vw, 480px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   overflow: hidden;
   background: radial-gradient(circle at 50% 50%, rgba(0, 229, 240, 0.16), #0a1118 66%);
+  animation: borderGlow 3s ease-in-out infinite;
 }
 
+/* ============================================================
+   27. Atom / Component Labels
+   ============================================================ */
 .atom-label {
   display: grid;
   place-items: center;
@@ -627,6 +805,9 @@ button {
   box-shadow: var(--shadow);
 }
 
+/* ============================================================
+   28. Component List
+   ============================================================ */
 .component-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -681,6 +862,9 @@ button {
   line-height: 1.5;
 }
 
+/* ============================================================
+   29. Control Grid
+   ============================================================ */
 .control-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -705,6 +889,9 @@ button {
   font: 800 15px ui-monospace, monospace;
 }
 
+/* ============================================================
+   30. Camera Preview
+   ============================================================ */
 .camera-preview {
   display: none;
   width: 180px;
@@ -724,6 +911,9 @@ button {
   font-size: 14px;
 }
 
+/* ============================================================
+   31. Paper Cards & Research
+   ============================================================ */
 .paper-list {
   display: grid;
   gap: 12px;
@@ -761,6 +951,9 @@ button {
   font-size: 13px;
 }
 
+/* ============================================================
+   32. Summary & Insights
+   ============================================================ */
 .summary {
   border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 6px;
@@ -787,6 +980,9 @@ button {
   color: var(--text);
 }
 
+/* ============================================================
+   33. ARIA Panel
+   ============================================================ */
 .aria-panel {
   align-self: start;
   position: sticky;
@@ -814,6 +1010,9 @@ button {
   font: 700 12px ui-monospace, monospace;
 }
 
+/* ============================================================
+   34. Bottom Navigation — Hover Scale
+   ============================================================ */
 .bottom-nav {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -835,6 +1034,11 @@ button {
   place-items: center;
   gap: 3px;
   font: 700 12px ui-monospace, monospace;
+  transition: var(--transition-smooth);
+}
+
+.bottom-nav button:hover {
+  transform: scale(1.08);
 }
 
 .bottom-nav span {
@@ -847,6 +1051,154 @@ button {
   box-shadow: var(--shadow);
 }
 
+/* ============================================================
+   35. Loading Skeleton
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-text {
+  height: 14px;
+  margin: 8px 0;
+}
+
+.skeleton-block {
+  height: 120px;
+}
+
+/* ============================================================
+   36. Loading Overlay & Spinner
+   ============================================================ */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(7, 16, 20, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  border-radius: 8px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(0, 229, 240, 0.2);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spinSlow 0.8s linear infinite;
+}
+
+.loading-text {
+  color: var(--cyan);
+  font: 700 13px ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 14px;
+}
+
+/* ============================================================
+   37. Search Suggestion Chips
+   ============================================================ */
+.search-suggestions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.search-chip {
+  padding: 6px 14px;
+  border: 1px solid rgba(0, 229, 240, 0.25);
+  border-radius: 999px;
+  background: rgba(0, 229, 240, 0.06);
+  color: var(--cyan);
+  font: 700 11px ui-monospace, monospace;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.search-chip:hover {
+  background: rgba(0, 229, 240, 0.15);
+  border-color: var(--cyan);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   38. Image-to-3D Panel
+   ============================================================ */
+.image-to-3d-card {
+  overflow: hidden;
+}
+
+.upload-zone {
+  border: 2px dashed rgba(0, 229, 240, 0.3);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 8px;
+  background: rgba(0, 229, 240, 0.03);
+  transition: var(--transition-smooth);
+  color: var(--muted);
+  font: 700 13px ui-monospace, monospace;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--cyan);
+  background: rgba(0, 229, 240, 0.08);
+  color: var(--text);
+}
+
+.upload-preview {
+  margin-top: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.upload-preview img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--gradient-accent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.upload-status {
+  color: var(--cyan);
+  font: 700 12px ui-monospace, monospace;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: 10px;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================================
+   39. Responsive — Tablet (≤ 1080px)
+   ============================================================ */
 @media (max-width: 1080px) {
   .content-shell {
     grid-template-columns: 1fr;
@@ -859,6 +1211,9 @@ button {
   }
 }
 
+/* ============================================================
+   40. Responsive — Mobile (≤ 760px)
+   ============================================================ */
 @media (max-width: 760px) {
   .app-shell {
     grid-template-rows: 64px minmax(0, 1fr) 78px;
@@ -905,7 +1260,9 @@ button {
   }
 }
 
-/* Viewport Interactive Controls Dashboard */
+/* ============================================================
+   41. Viewport Interactive Controls Dashboard
+   ============================================================ */
 .viewport-controls-overlay {
   position: absolute;
   top: 15px;
